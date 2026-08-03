@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-fDBk0RdX624/a15JCiCfGxXR7bukV5PlrrGj192JU7g='; style-src 'sha256-X/6foYdarpfvHBrgYqCIQnM5rdSfvqJcABEfZ0/o0U0='; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-9H2EXesdidXpZ7HI8VkaZIbruV4t+xJZn6GqY2fAfGk='; style-src 'sha256-X/6foYdarpfvHBrgYqCIQnM5rdSfvqJcABEfZ0/o0U0='; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Claude Transcript Viewer</title>
 <style>:root{color-scheme:light dark;
  --bg:#f6f6f7;--surface:#fff;--text:#1c1c1e;--muted:#71717a;--border:#e4e4e7;
@@ -1585,7 +1585,12 @@ function bootStatic() {
   // transcripts are in memory, otherwise to the drop zone so another file can be opened.
   // Clicking the title goes back too. It is what a site logo does, and it means the one
   // way out of a transcript is findable without hunting for a button.
-  $('h1').onclick = () => { if (document.body.classList.contains('loaded')) goHome(); };
+  //
+  // The button's own disabled state is the single source of truth for whether there is
+  // anywhere to go. Reading `loaded` here instead let the title do what the button was
+  // disabled to prevent: on a page with an embedded transcript it emptied the view, and
+  // since the button stayed disabled there was no way back short of a reload.
+  $('h1').onclick = () => { if (!$('#homebtn').disabled) goHome(); };
 
   const goHome = () => {
     // From a transcript with siblings, back means the list. From the list itself, back
@@ -1613,6 +1618,10 @@ function bootStatic() {
     document.title = 'Claude Transcript Viewer';
     $('h1').textContent = 'Claude Transcript Viewer';
     $('#homebtn').innerHTML = '⌂<span class="lbl"> Home</span>';
+    // render() is what disables this, and nothing here would re-enable it. Landing on the
+    // drop zone with a dead Home button is a state the user cannot leave.
+    $('#homebtn').disabled = false;
+    $('#homebtn').title = 'Back to the start, to open another transcript';
     $('#droperr').textContent = '';
     scrollTo({ top: 0 });
   };

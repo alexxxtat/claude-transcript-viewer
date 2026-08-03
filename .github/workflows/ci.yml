@@ -15,6 +15,14 @@ jobs:
         # mechanical tells of machine-written prose. No dependencies, so nothing to install.
         run: python3 tools/lint.py
 
+      - name: A browser must actually be present
+        # Both probe suites skip and exit 0 when no browser is found, which is correct for a
+        # contributor's machine and wrong here: it reported a pass for every CI run that never
+        # opened a browser. Fail loudly instead.
+        run: |
+          which google-chrome || which chromium || which chromium-browser || {
+            echo "No browser on the runner; the probe suites below would silently skip."; exit 1; }
+
       - name: Untrusted-input probes
         # Renders four hostile transcripts in the browser and inspects the DOM afterwards.
         # A static scan cannot decide this: the first version of that test passed on a page
@@ -34,6 +42,11 @@ jobs:
         run: |
           python3 claude_transcript_viewer.py --build
           git diff --exit-code -- viewer.html
+
+      - name: No navigable dead ends
+        # Two ways back (the Home button and the title) disagreed, so the title could empty a
+        # page the button was disabled to protect, leaving no way out but a reload.
+        run: python3 demo/test_navigation.py
 
       - name: The published demo page must be reproducible too
         # docs/index.html is what GitHub Pages serves, so a stale one misrepresents the project

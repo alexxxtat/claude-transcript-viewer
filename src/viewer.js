@@ -970,7 +970,12 @@ function bootStatic() {
   // transcripts are in memory, otherwise to the drop zone so another file can be opened.
   // Clicking the title goes back too. It is what a site logo does, and it means the one
   // way out of a transcript is findable without hunting for a button.
-  $('h1').onclick = () => { if (document.body.classList.contains('loaded')) goHome(); };
+  //
+  // The button's own disabled state is the single source of truth for whether there is
+  // anywhere to go. Reading `loaded` here instead let the title do what the button was
+  // disabled to prevent: on a page with an embedded transcript it emptied the view, and
+  // since the button stayed disabled there was no way back short of a reload.
+  $('h1').onclick = () => { if (!$('#homebtn').disabled) goHome(); };
 
   const goHome = () => {
     // From a transcript with siblings, back means the list. From the list itself, back
@@ -998,6 +1003,10 @@ function bootStatic() {
     document.title = 'Claude Transcript Viewer';
     $('h1').textContent = 'Claude Transcript Viewer';
     $('#homebtn').innerHTML = '⌂<span class="lbl"> Home</span>';
+    // render() is what disables this, and nothing here would re-enable it. Landing on the
+    // drop zone with a dead Home button is a state the user cannot leave.
+    $('#homebtn').disabled = false;
+    $('#homebtn').title = 'Back to the start, to open another transcript';
     $('#droperr').textContent = '';
     scrollTo({ top: 0 });
   };

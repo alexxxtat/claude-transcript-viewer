@@ -18,19 +18,11 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import browser  # noqa: E402  (sibling module, not an installed package)
+
 ROOT = Path(__file__).resolve().parent.parent
-def _find_chrome():
-    """CI runners and laptops keep Chrome in different places."""
-    import shutil
-    for c in ("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-              "google-chrome", "google-chrome-stable", "chromium", "chromium-browser"):
-        hit = c if Path(c).exists() else shutil.which(c)
-        if hit:
-            return Path(hit)
-    return Path("/nonexistent")
-
-
-CHROME = _find_chrome()
+CHROME = browser.find()
 MARKER = "XSS-FIRED"
 
 PROBES = [
@@ -57,14 +49,13 @@ def render(media_type, data, out_dir):
                    cwd=ROOT, capture_output=True, check=True)
     page = next(iter(Path(out_dir).glob("claude-*.html")))
     dom = subprocess.run(
-        [str(CHROME), "--headless=new", "--disable-gpu", "--virtual-time-budget=3000",
-         "--dump-dom", page.as_uri()], capture_output=True, text=True).stdout
+        browser.argv(CHROME, page.as_uri(), 3000), capture_output=True, text=True).stdout
     return dom
 
 
 def main():
-    if not CHROME.exists():
-        print(f"SKIP: Chrome not found at {CHROME}")
+    if CHROME is None:
+        print("SKIP: no Chrome or Chromium on this machine")
         return 0
     failures = 0
     for name, media_type, data in PROBES:
