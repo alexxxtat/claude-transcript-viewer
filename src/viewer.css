@@ -1,0 +1,488 @@
+:root{color-scheme:light dark;
+ --bg:#f6f6f7;--surface:#fff;--text:#1c1c1e;--muted:#71717a;--border:#e4e4e7;
+ --accent:#2563eb;--user-bg:#eef3fd;--user-edge:#cfdcf7;--user-bar:#2563eb;--meta-bg:#f1f1f3;
+ --think-bg:#f7f4ef;--think-bar:#c8a96a;--tool-bg:#f2f4f7;
+ --code-bg:#1e2229;--code-text:#e6e6e9;--mark:#ffd84d}
+@media(prefers-color-scheme:dark){:root{
+ --bg:#121215;--surface:#1c1c20;--text:#e7e7ea;--muted:#9a9aa2;--border:#2b2b31;
+ --accent:#5b8df6;--user-bg:#1a2131;--user-edge:#2c3852;--user-bar:#5b8df6;--meta-bg:#212126;
+ --think-bg:#221f1a;--think-bar:#8a7444;--tool-bg:#1f2126;
+ --code-bg:#16181d;--code-text:#dfe3ea;--mark:#a8801a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+ font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC",Helvetica,sans-serif}
+a{color:var(--accent)}
+header{position:sticky;top:0;z-index:30;padding:9px 18px 7px;
+ background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(14px);
+ border-bottom:1px solid var(--border)}
+.row1{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+h1{margin:0;font-size:15px;font-weight:650;flex:1;min-width:160px;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.search{display:flex;align-items:center;gap:5px}
+input[type=search],.btn{background:var(--surface);border:1px solid var(--border);
+ color:var(--text);border-radius:8px;font-size:13.5px}
+input[type=search]{padding:6px 10px;width:200px;outline:none}
+input[type=search]:focus{border-color:var(--accent)}
+.btn{padding:5px 10px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.count{color:var(--muted);font-size:12px;min-width:56px}
+.filters{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;font-size:12.5px;
+ color:var(--muted);align-items:center}
+.filters label{display:flex;gap:4px;align-items:center;cursor:pointer;user-select:none}
+.filters input{accent-color:var(--accent);margin:0}
+.filters .sep{opacity:.4}
+.layout{display:flex;max-width:1180px;margin:0 auto;gap:8px}
+nav{width:242px;flex:none;padding:20px 8px 60px;position:sticky;top:96px;
+ align-self:flex-start;max-height:calc(100vh - 110px);overflow-y:auto}
+nav h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 10px 8px}
+nav a{display:block;padding:6px 10px;border-radius:7px;color:var(--muted);
+ text-decoration:none;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+nav a:hover{background:var(--surface);color:var(--text)}
+.chat{flex:1;min-width:0;padding:20px 16px 120px}
+.filebar{background:var(--surface);border:1px solid var(--border);border-radius:13px;
+ padding:12px 16px;margin-bottom:22px;font-size:13.5px}
+.filebar h3{margin:0 0 8px;font-size:13px;color:var(--muted);font-weight:600}
+.filebar ul{margin:0;padding-left:0;list-style:none;columns:2;column-gap:22px}
+.filebar li{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;padding:1.5px 0;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap;break-inside:avoid}
+.filebar li b{color:var(--muted);font-weight:400}
+@media(max-width:700px){.filebar ul{columns:1}}
+.msg{margin:18px 0;scroll-margin-top:110px}
+.who{font-size:11.5px;color:var(--muted);margin:0 2px 5px;display:flex;gap:8px;align-items:baseline}
+.who b{font-weight:600;color:var(--text);font-size:12.5px}
+.who .num{opacity:.55;font-variant-numeric:tabular-nums}
+.who a{color:inherit;text-decoration:none}.who a:hover{color:var(--accent)}
+.card{padding:14px 18px;border-radius:14px;overflow-wrap:break-word}
+.user .card{background:var(--user-bg);border:1px solid var(--border);border-left:3px solid var(--user-bar)}
+.assistant .card{background:var(--surface);border:1px solid var(--border)}
+.card p{margin:0 0 10px}.card p:last-child{margin-bottom:0}
+.card>:first-child{margin-top:0}
+.card h3,.card h4,.card h5,.card h6{margin:15px 0 7px;font-size:1.02em}
+.card ul{margin:7px 0;padding-left:22px}.card li{margin:3px 0}
+code{background:color-mix(in srgb,var(--muted) 18%,transparent);padding:1px 5px;border-radius:5px;
+ font-size:.88em;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.codewrap{position:relative;margin:10px 0}
+.codewrap pre{background:var(--code-bg);color:var(--code-text);margin:0;padding:13px 15px;
+ border-radius:11px;overflow-x:auto;font-size:13px;line-height:1.6}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+.copy{position:absolute;top:8px;right:8px;opacity:0;transition:opacity .15s;
+ background:rgba(255,255,255,.12);color:#e6e6e9;border:none;border-radius:6px;
+ padding:3px 9px;font-size:11.5px;cursor:pointer}
+.codewrap:hover .copy{opacity:1}
+.tablewrap{overflow-x:auto;margin:10px 0}
+table{border-collapse:collapse;font-size:14px;width:100%}
+th,td{border:1px solid var(--border);padding:6px 11px;text-align:left}
+th{background:color-mix(in srgb,var(--muted) 12%,transparent);font-weight:600}
+details.think{background:var(--think-bg);border:1px solid var(--border);
+ border-left:3px solid var(--think-bar);border-radius:11px;margin:12px 0;font-size:14.5px}
+details.think>summary{cursor:pointer;padding:8px 14px;color:var(--muted);font-size:12.5px;list-style:none}
+details.think .card{background:none;border:none;padding:2px 16px 12px;font-style:italic;opacity:.92}
+details.meta-block{background:var(--meta-bg);border:1px dashed var(--border);
+ border-radius:11px;margin:12px 0;font-size:14px}
+details.meta-block>summary{cursor:pointer;padding:8px 14px;color:var(--muted);font-size:12.5px;list-style:none}
+details.meta-block .card{background:none;border:none;padding:2px 16px 12px}
+summary::-webkit-details-marker{display:none}
+summary:before{content:"▸ "}details[open]>summary:before{content:"▾ "}
+.toolrun{margin:10px 0;border:1px solid var(--border);border-radius:11px;
+ background:var(--tool-bg);overflow:hidden}
+.toolrun>summary{cursor:pointer;padding:7px 13px;color:var(--muted);font-size:12.5px;list-style:none}
+.toolrun .inner{padding:2px 10px 9px}
+details.tool{border-radius:8px;margin:3px 0;background:color-mix(in srgb,var(--surface) 70%,transparent)}
+details.tool>summary{cursor:pointer;padding:5px 10px;font-size:12.5px;list-style:none;
+ display:flex;gap:7px;align-items:baseline;font-family:ui-monospace,Menlo,monospace}
+details.tool>summary:before{content:""}
+details.tool .name{color:var(--accent);flex:none}
+details.tool .arg{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+details.tool .body{padding:2px 12px 10px;font-size:12.5px}
+details.tool .body h6{margin:8px 0 3px;font-size:11px;color:var(--muted);
+ text-transform:uppercase;letter-spacing:.06em}
+details.tool pre{background:var(--code-bg);color:var(--code-text);margin:0;padding:10px 12px;
+ border-radius:8px;overflow-x:auto;font-size:12px;line-height:1.55;max-height:340px}
+ul.todo{list-style:none;padding:0;margin:4px 0;font-size:13px}
+ul.todo li.done{opacity:.55;text-decoration:line-through}
+.shots{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.shots img{height:120px;width:auto;max-width:180px;object-fit:cover;object-position:top;
+ border-radius:9px;border:1px solid var(--border);cursor:zoom-in;display:block;
+ background:var(--meta-bg);transition:transform .12s,border-color .12s}
+.shots img:hover{transform:scale(1.03);border-color:var(--accent)}
+#lb,#media{position:fixed;inset:0;display:none;background:rgba(8,8,10,.93);
+ backdrop-filter:blur(6px)}
+#lb.open,#media.open{display:flex}
+#media{z-index:100}
+#lb{z-index:120;align-items:center;justify-content:center}
+#lb img{max-width:92vw;object-fit:contain;border-radius:8px;
+ max-height:calc(100vh - 176px);max-height:calc(100svh - 176px);
+ box-shadow:0 24px 70px rgba(0,0,0,.6)}
+#lb .nav{position:absolute;top:0;bottom:0;width:22vw;min-width:80px;border:none;background:none;
+ color:#fff;font-size:38px;cursor:pointer;opacity:.42;transition:opacity .15s;
+ display:flex;align-items:center;justify-content:center}
+#lb .nav:hover{opacity:1}
+#lbprev{left:0}#lbnext{right:0}
+.x{position:absolute;top:14px;right:18px;background:rgba(255,255,255,.13);color:#fff;border:none;
+ border-radius:9px;width:38px;height:38px;font-size:19px;cursor:pointer;line-height:1;z-index:2}
+.x:hover{background:rgba(255,255,255,.27)}
+#lbcount{position:absolute;top:18px;left:50%;transform:translateX(-50%);
+ color:#fff;opacity:.7;font-size:13px;max-width:min(78vw,760px);text-align:center;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
+#lbbottom{position:absolute;left:50%;transform:translateX(-50%);
+ bottom:calc(14px + env(safe-area-inset-bottom));z-index:3;
+ display:flex;flex-direction:column;align-items:center;gap:9px;
+ width:min(92vw,720px);text-align:center}
+#lbactions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+#lbactions button{background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:9px;
+ padding:9px 16px;font-size:13px;cursor:pointer;white-space:nowrap;
+ backdrop-filter:blur(8px)}
+#lbactions button:hover{background:rgba(255,255,255,.32)}
+#lbhint{color:#fff;opacity:.38;font-size:11.5px;line-height:1.5}
+#media{flex-direction:column}
+#mediabar{flex:none;display:flex;align-items:center;justify-content:space-between;
+ gap:14px;padding:14px 20px;color:#fff;border-bottom:1px solid rgba(255,255,255,.12)}
+#mediahead{opacity:.72;font-size:13.5px}
+#mediabar .tools{display:flex;gap:10px;align-items:center}
+#mediabar button{background:rgba(255,255,255,.13);color:#fff;border:none;border-radius:9px;
+ padding:8px 14px;font-size:13px;cursor:pointer;position:static;width:auto;height:auto}
+#mediabar button:hover{background:rgba(255,255,255,.28)}
+#mediascroll{flex:1;overflow-y:auto;padding:18px 24px 40px}
+#mediagrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+ gap:12px;max-width:1200px;margin:0 auto;width:100%}
+#mediagrid figure{margin:0;cursor:zoom-in}
+#mediagrid img{width:100%;height:170px;object-fit:cover;object-position:top;border-radius:10px;
+ border:1px solid rgba(255,255,255,.14);background:#000;display:block}
+#mediagrid figure:hover img{border-color:#fff}
+#mediagrid figcaption{color:#fff;opacity:.5;font-size:11.5px;padding:5px 2px 0;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#pill{position:fixed;right:20px;bottom:20px;z-index:40;background:var(--surface);
+ border:1px solid var(--border);border-radius:22px;padding:7px 14px;font-size:12.5px;
+ color:var(--muted);cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.14);
+ font-variant-numeric:tabular-nums;user-select:none}
+#pill:hover{color:var(--text);border-color:var(--accent)}
+@keyframes flash{0%,100%{box-shadow:0 0 0 0 transparent}
+ 15%,70%{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 45%,transparent)}}
+.msg.flash .card{animation:flash 1.8s ease-out;border-radius:14px}
+mark{background:var(--mark);color:#1c1c1e;border-radius:3px;padding:0 1px}
+mark.on{outline:2px solid var(--accent)}
+body.hide-think details.think{display:none}
+body.hide-tool .toolrun{display:none}
+body.hide-meta details.meta-block{display:none}
+body.hide-assistant .msg.assistant{display:none}
+
+/* ── touch devices: hover-only affordances never appear, so pin them visible ── */
+@media(hover:none){
+ .copy{opacity:.8}
+ #lb .nav{opacity:.6}
+ .shots img:hover{transform:none}
+ #lbactions button,.btn,nav a{min-height:38px}
+}
+
+/* ── narrow screens ── */
+#tocbtn{display:none}
+@media(max-width:860px){
+ .chat{padding:14px 12px 110px}
+ #tocbtn{display:inline-block}
+ h1{min-width:100%;order:-1}
+ input[type=search]{width:min(52vw,240px)}
+ /* Explicit box, not `inset:0`: the sidebar's own base rule left this at its content
+    height, so the panel opened without covering the page behind it. */
+ nav{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100dvh;
+  z-index:60;max-height:none;padding:0 14px 40px;
+  background:var(--bg);display:none;overflow-y:auto}
+ body.toc-open nav{display:block}
+ body.toc-open{overflow:hidden}
+ nav h2{position:sticky;top:0;background:var(--bg);padding:6px 10px 10px;margin:0;font-size:12px}
+ nav a{font-size:14px;padding:9px 10px;white-space:normal}
+ #lb .nav{width:64px;min-width:0;font-size:30px}
+ #mediabar{flex-wrap:wrap;gap:8px;padding:10px 14px}
+ #mediahead{width:100%;font-size:12px}
+ #mediascroll{padding:12px 14px 40px}
+ #mediagrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:9px}
+ #mediagrid img{height:130px}
+ #pill{right:12px;bottom:calc(12px + env(safe-area-inset-bottom))}
+}
+@media(max-width:520px){
+ .filters{gap:9px;font-size:12px}
+ .card{padding:12px 14px}
+ .shots img{height:96px;max-width:140px}
+}
+
+/* ── drop zone (only shown when no transcript is embedded) ── */
+#drop{max-width:640px;margin:14vh auto 0;padding:0 20px;text-align:center}
+#drop .zone{border:2px dashed var(--border);border-radius:20px;padding:52px 28px;
+ background:var(--surface);transition:border-color .15s,background .15s;cursor:pointer}
+#drop.over .zone{border-color:var(--accent);
+ background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
+#drop h2{margin:0 0 8px;font-size:20px}
+#drop p{margin:6px 0;color:var(--muted);font-size:14px;line-height:1.65}
+#drop .hint{margin-top:22px;font-size:12.5px;opacity:.8}
+#drop code{font-size:12.5px}
+#drop input{display:none}
+#drop .err{color:#e5484d;font-size:13px;margin-top:12px;min-height:18px}
+body.loaded #drop{display:none}
+body:not(.loaded) header .search,body:not(.loaded) .filters,
+body:not(.loaded) #mediabtn,body:not(.loaded) #tocbtn,
+body:not(.loaded) #exportbtn,body:not(.loaded) #pill,body:not(.loaded) .layout{display:none}
+
+#drop .hint{margin-top:26px;text-align:left;font-size:13px;line-height:1.75;color:var(--muted)}
+#drop .hint p{margin:0 0 9px}
+#drop .hint .fine{margin-top:16px;font-size:12px;opacity:.75}
+#drop kbd{display:inline-block;background:var(--surface);border:1px solid var(--border);
+ border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:12px;
+ font-family:ui-monospace,Menlo,monospace;margin:0 1px}
+.pathbtn{background:var(--surface);border:1px solid var(--border);color:var(--accent);
+ border-radius:6px;padding:2px 8px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;
+ cursor:pointer}
+.pathbtn:hover{border-color:var(--accent)}
+
+.filters .n{opacity:.65}
+
+/* Reading measure: research puts comfortable prose at 50–75 characters, and WCAG 1.4.8
+   caps it at 80. Cards were running past 110. Tables and code keep the full width. */
+.card p, .card li, .card h3, .card h4, .card h5, .card h6 { max-width: 72ch }
+details.tool .body h6.err { color: #e5484d }
+.card .warn, .body .warn { color: #e5a23d; font-size: 12.5px; margin: 6px 0 0 }
+html, body { overflow-x: hidden }
+.layout, .chat, header { max-width: 100%; }
+.filebar ul { columns: 2 }
+@media (max-width: 900px) { .filebar ul { columns: 1 } }
+
+/* ── bulk import: the picker shown when several transcripts are dropped at once ── */
+#picker{display:none;max-width:820px;margin:0 auto;padding:34px 18px 90px}
+body.picking #picker{display:block}
+body.picking .layout,body.picking #drop{display:none}
+body.picking header .search,body.picking .filters,body.picking .stats,
+body.picking .statsmore,body.picking #mediabtn,body.picking #exportbtn,
+body.picking #tocbtn,body.picking #pill{display:none}
+#picker h2{font-size:15px;color:var(--muted);font-weight:600;margin:0 0 14px}
+#picker .rows{display:flex;flex-direction:column;gap:8px}
+.srow{display:grid;gap:3px;text-align:left;width:100%;cursor:pointer;
+ background:var(--surface);border:1px solid var(--border);border-radius:12px;
+ padding:12px 16px;color:var(--text);font:inherit}
+.srow:hover{border-color:var(--accent)}
+.srow .t{font-weight:600;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srow .m{font-size:12.5px;color:var(--muted)}
+.srow .f{font-size:11.5px;color:var(--muted);opacity:.6;font-family:ui-monospace,Menlo,monospace;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── header stats: chips, not one long dot-separated line ── */
+.stats{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:7px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);
+ background:color-mix(in srgb,var(--muted) 11%,transparent);
+ border:1px solid transparent;border-radius:7px;padding:3px 9px;white-space:nowrap}
+.chip b{font-weight:400;opacity:.75;font-size:11.5px}
+.chip.more{cursor:pointer;font-family:inherit;color:var(--muted);
+ border-color:var(--border);background:none;padding:3px 8px}
+.chip.more:hover{color:var(--text);border-color:var(--accent)}
+.statsmore{display:none;margin-top:8px;font-size:12.5px;color:var(--muted);
+ background:var(--surface);border:1px solid var(--border);border-radius:10px;
+ padding:9px 13px;max-width:760px}
+.statsmore.open{display:block}
+.statsmore div{display:flex;gap:10px;padding:2px 0;align-items:baseline}
+.statsmore div span{flex:none;width:130px;opacity:.7}
+
+/* ── Card refinements ─────────────────────────────────────────────────────────
+   Cards stay, but they should not all carry the same weight. Three surfaces with
+   identical fill, border and radius is the shape that reads as generated. So the
+   file summary drops to a flat strip (it is metadata, not speech), the assistant
+   card softens to let long prose breathe, and only your own turns keep the full
+   accent treatment. */
+.filebar{background:none;border:none;border-bottom:1px solid var(--border);
+ border-radius:0;padding:0 2px 15px;margin-bottom:6px}
+.filebar h3{font-size:12px;letter-spacing:.02em}
+.assistant .card{background:color-mix(in srgb,var(--surface) 62%,transparent);
+ border-color:color-mix(in srgb,var(--border) 62%,transparent)}
+.msg{margin:22px 0}
+.msg+.msg{margin-top:24px}
+.who{margin-bottom:6px}
+.who b{letter-spacing:.01em}
+.user .who b{color:var(--accent)}
+.card{border-radius:12px}
+.user .card{padding-left:16px}
+/* Long turns get a little more air between paragraphs than short ones need. */
+.card p+p{margin-top:2px}
+
+/* Your turns are marked by the accent-coloured speaker label and a tint, not by a stripe.
+   A coloured bar down the side of a card is decoration doing a job the label already does. */
+.user .card{background:var(--user-bg);border:1px solid var(--user-edge);border-left-width:1px;
+ padding-left:18px}
+body.hide-user .msg.user{display:none}
+
+/* Per-message copy. Copies the markdown the record held, not the rendered text, so a table
+   or a code fence survives the trip. */
+.msgcopy{opacity:0;transition:opacity .15s,color .15s;background:none;border:none;
+ color:var(--muted);cursor:pointer;font-size:12.5px;padding:0 4px;line-height:1;
+ margin-left:2px}
+.msg:hover .msgcopy,.msgcopy:focus-visible{opacity:.7}
+.msgcopy:hover{opacity:1;color:var(--accent)}
+.msgcopy.ok{opacity:1;color:#4abe82}
+@media(hover:none){.msgcopy{opacity:.55}}
+
+/* Table of contents panel header. The close button only exists where the panel is a
+   full-screen sheet; on a wide screen the sidebar is always visible and needs no dismiss. */
+.navbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#tocclose{display:none;background:var(--surface);border:1px solid var(--border);
+ color:var(--text);border-radius:9px;width:36px;height:36px;font-size:16px;cursor:pointer;
+ flex:none;line-height:1}
+#tocclose:hover{border-color:var(--accent)}
+@media(max-width:860px){
+ #tocclose{display:block}
+ .navbar{position:sticky;top:0;z-index:1;background:var(--bg);
+  padding:12px 0 10px;margin-bottom:2px;border-bottom:1px solid var(--border)}
+ nav h2{position:static;padding:0 4px;margin:0}
+}
+
+/* ── Narrow header ────────────────────────────────────────────────────────────
+   Under about 560px the header was eating 440px of height before a single message
+   appeared: three rows of buttons, two rows of chips. Labels collapse to their icons
+   and the chips fold into the ⓘ panel, which now carries every value they showed, so
+   nothing is lost by hiding them. */
+@media(max-width:640px){
+ header{padding:7px 12px 6px}
+ .row1{gap:8px}
+ h1{font-size:14px}
+ .btn{padding:5px 8px}
+ input[type=search]{width:auto;flex:1;min-width:0}
+ .search{flex:1;min-width:0}
+ .filters{gap:10px;margin-top:5px}
+ .stats{margin-top:5px}
+ .chip{padding:2px 8px;font-size:11.5px}
+}
+@media(max-width:560px){
+ .stats .chip:not(.more){display:none}
+ .statsmore{max-width:100%}
+ .statsmore div span{width:96px}
+}
+@media(max-width:400px){
+ .filters label span{display:none}
+ .count{min-width:0}
+}
+
+/* Inline code is the one thing that can push the page wider than the screen: it is a long
+   unbreakable monospace token inside prose. `anywhere` (not `break-word`) is what actually
+   lowers the element's min-content width, which is what the overflow depends on. Code
+   blocks are excluded, since those scroll inside their own container by design. */
+code{overflow-wrap:anywhere}
+pre code{overflow-wrap:normal}
+.filebar li{overflow-wrap:anywhere;white-space:normal}
+
+/* ── Priority+ header ─────────────────────────────────────────────────────────
+   Seven controls plus a title, filters and stats will not sit on one line, and letting
+   them wrap produced a five-row header that pushed the conversation off the screen. The
+   search box and the title keep their place at every width; everything else collapses
+   into one overflow button once the row stops fitting. */
+/* margin-left:auto keeps the actions on the right edge at every width. Below 860px the
+   title takes its own row, so it stops flexing and there is nothing else to push them. */
+.actions{position:relative;display:flex;align-items:center;margin-left:auto}
+#morebtn{display:none;font-size:15px;line-height:1;padding:5px 11px}
+.actionmenu{display:flex;gap:6px;align-items:center}
+.metarow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px}
+.metarow .filters,.metarow .stats{margin-top:6px}
+
+@media(max-width:1000px){
+ #morebtn{display:block}
+ .actionmenu{display:none;position:absolute;right:0;top:calc(100% + 7px);z-index:50;
+  flex-direction:column;align-items:stretch;gap:4px;padding:6px;min-width:158px;
+  background:var(--surface);border:1px solid var(--border);border-radius:11px;
+  box-shadow:0 10px 30px rgba(0,0,0,.28)}
+ body.menu-open .actionmenu{display:flex}
+ .actionmenu .btn{border:none;background:none;text-align:left;padding:7px 10px;font-size:13.5px}
+ .actionmenu .btn:hover{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+ .actionmenu .lbl{display:inline}
+ .actionmenu #mediabtn:after{content:" Media"}
+ .actionmenu #tocbtn:after{content:" Contents"}
+}
+
+/* ── Print, which is also how you get a PDF ───────────────────────────────────
+   Cmd+P already produces a PDF; it just needed to stop printing the chrome. Sticky
+   headers repeat on every page, dark backgrounds waste ink, and collapsed sections
+   print as their summary line unless opened. */
+@media print{
+ header,nav,#pill,#lb,#media,#drop,.msgcopy,.copy,.actions{display:none!important}
+ body{background:#fff;color:#000}
+ .layout{display:block;max-width:none}
+ .chat{padding:0}
+ .card{background:none!important;border:1px solid #ddd!important;break-inside:avoid}
+ .user .card{background:#f4f7ff!important}
+ .who{color:#555}
+ .who b{color:#000}
+ .codewrap pre,details.tool pre{background:#f3f3f5;color:#111;border:1px solid #e0e0e4;
+  white-space:pre-wrap;max-height:none}
+ code{background:#f0f0f2;color:#111}
+ .shots img{height:auto;max-width:46%;break-inside:avoid}
+ details.think,details.meta-block,.toolrun{display:none}
+ .filebar{border-bottom:1px solid #ccc}
+ a{color:#000;text-decoration:underline}
+ .msg{break-inside:avoid-page}
+ table,th,td{border-color:#ccc!important}
+ th{background:#f3f3f5!important}
+}
+
+/* A dropped .md is a document, not a conversation: no speaker, no filters, no prompt index.
+   Hiding them is what stops the page looking broken rather than repurposed. */
+body.docmode .filters,body.docmode .stats,body.docmode .statsmore,
+body.docmode #mediabtn,body.docmode #pill{display:none}
+body.docmode .layout{max-width:1040px}
+.msg.doc{margin:0}
+.msg.doc .card{background:none;border:none;padding:22px 4px 60px}
+.msg.doc .card>:first-child{margin-top:0}
+
+/* Headings need to read as headings. At a flat 1.02em every level looked like bold text,
+   which is survivable inside a chat turn and wrong for a document. */
+.card h2{font-size:1.32em;margin:20px 0 8px}
+.card h3{font-size:1.16em;margin:18px 0 7px}
+.card h4{font-size:1.04em;margin:16px 0 6px}
+.card h5,.card h6{font-size:.97em;margin:14px 0 5px;color:var(--muted)}
+.card ol{margin:7px 0;padding-left:24px}
+.card ol li{margin:3px 0}
+
+/* The title doubles as the way back, the way a site logo does. Only once something is
+   loaded, since at the drop zone there is nowhere to go. */
+body.loaded h1,body.picking h1{cursor:pointer}
+body.loaded h1:hover,body.picking h1:hover{color:var(--accent)}
+
+/* The export popover shares the overflow menu's anchoring so it lands in the same place
+   whether the button was in the header or inside ⋯. */
+#exportmenu{display:none;position:absolute;right:0;top:calc(100% + 7px);z-index:51;
+ flex-direction:column;align-items:stretch;gap:2px;padding:6px;min-width:214px;
+ background:var(--surface);border:1px solid var(--border);border-radius:11px;
+ box-shadow:0 10px 30px rgba(0,0,0,.28)}
+body.export-open #exportmenu{display:flex}
+#exportmenu .btn{border:none;background:none;text-align:left;padding:8px 10px;
+ font-size:13.5px;display:flex;flex-direction:column;gap:1px;line-height:1.35}
+#exportmenu .btn:hover{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+#exportmenu small{font-size:11.5px;color:var(--muted);font-weight:400}
+body.picking #exportmenu,body:not(.loaded) #exportmenu{display:none}
+
+/* A document's contents list indents by heading level, which is the only cue that says
+   where you are in a structure rather than just what is in it. */
+nav a.lvl2{font-weight:600;color:var(--text);margin-top:7px}
+nav a.lvl3{padding-left:20px}
+nav a.lvl4{padding-left:32px;font-size:12.5px}
+nav a.lvl5,nav a.lvl6{padding-left:42px;font-size:12px;opacity:.85}
+body.docmode nav a{white-space:normal}
+
+/* Wikilinks cannot resolve outside a vault, so they stay visible as references rather than
+   being silently flattened into plain words. */
+.wikilink{color:var(--accent);opacity:.85}
+#drop .zone .fine{margin-top:14px;font-size:12.5px;opacity:.7}
+
+/* ── Links panel: the same shape as media mode, for the other kind of artefact a session
+   accumulates. An index without a way back to the context is just a bookmark dump. ── */
+#links{position:fixed;inset:0;z-index:100;display:none;flex-direction:column;
+ background:rgba(8,8,10,.93);backdrop-filter:blur(6px)}
+#links.open{display:flex}
+#linkhead{opacity:.72;font-size:13.5px;color:#fff}
+#linklist{max-width:920px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:6px}
+.linkrow{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;
+ background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09)}
+.linkrow:hover{border-color:rgba(255,255,255,.28)}
+.linkrow a{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;
+ text-decoration:none;color:#fff}
+.linkrow a b{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.linkrow a span{font-size:11.5px;opacity:.5;font-family:ui-monospace,Menlo,monospace;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.linkrow button{flex:none;background:rgba(255,255,255,.12);color:#fff;border:none;
+ border-radius:7px;padding:5px 10px;font-size:12px;cursor:pointer;
+ font-variant-numeric:tabular-nums}
+.linkrow button:hover{background:rgba(255,255,255,.28)}
+body.picking #linkbtn,body.docmode #linkbtn{display:none}
+.btn:disabled{opacity:.4;cursor:default}
+.btn:disabled:hover{border-color:var(--border)}

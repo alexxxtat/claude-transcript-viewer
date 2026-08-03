@@ -1,0 +1,36 @@
+name: checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pre-publish lint
+        # Catches a viewer.html that lags src/, anything from a real machine, and the two
+        # mechanical tells of machine-written prose. No dependencies, so nothing to install.
+        run: python3 tools/lint.py
+
+      - name: Untrusted-input probes
+        # Renders four hostile transcripts in the browser and inspects the DOM afterwards.
+        # A static scan cannot decide this: the first version of that test passed on a page
+        # that was still exploitable.
+        run: python3 demo/test_hardening.py
+
+      - name: The demo must still convert
+        # Converts the committed sample rather than regenerating it. Regenerating needs
+        # Pillow to draw the mock screenshots, which is a maintainer's tool, not part of
+        # the product: the converter and the page it produces have no dependencies at all,
+        # and that claim is what this step exists to keep honest.
+        run: python3 claude_transcript_viewer.py demo/sample-session.jsonl /tmp
+
+      - name: The build must be reproducible
+        # If --build produces a different file than the committed one, the artifact and the
+        # source have diverged even though the lint's containment check passed.
+        run: |
+          python3 claude_transcript_viewer.py --build
+          git diff --exit-code -- viewer.html

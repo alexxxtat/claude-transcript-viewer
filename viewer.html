@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-fDBk0RdX624/a15JCiCfGxXR7bukV5PlrrGj192JU7g='; style-src 'sha256-gERb9F1RwxHIHkycJ4Jgy6R4kg+lZbhQGDEo7uXMnDs='; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Claude Transcript Viewer</title>
+<style>:root{color-scheme:light dark;
+ --bg:#f6f6f7;--surface:#fff;--text:#1c1c1e;--muted:#71717a;--border:#e4e4e7;
+ --accent:#2563eb;--user-bg:#eef3fd;--user-edge:#cfdcf7;--user-bar:#2563eb;--meta-bg:#f1f1f3;
+ --think-bg:#f7f4ef;--think-bar:#c8a96a;--tool-bg:#f2f4f7;
+ --code-bg:#1e2229;--code-text:#e6e6e9;--mark:#ffd84d}
+@media(prefers-color-scheme:dark){:root{
+ --bg:#121215;--surface:#1c1c20;--text:#e7e7ea;--muted:#9a9aa2;--border:#2b2b31;
+ --accent:#5b8df6;--user-bg:#1a2131;--user-edge:#2c3852;--user-bar:#5b8df6;--meta-bg:#212126;
+ --think-bg:#221f1a;--think-bar:#8a7444;--tool-bg:#1f2126;
+ --code-bg:#16181d;--code-text:#dfe3ea;--mark:#a8801a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+ font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC",Helvetica,sans-serif}
+a{color:var(--accent)}
+header{position:sticky;top:0;z-index:30;padding:9px 18px 7px;
+ background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(14px);
+ border-bottom:1px solid var(--border)}
+.row1{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+h1{margin:0;font-size:15px;font-weight:650;flex:1;min-width:160px;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.search{display:flex;align-items:center;gap:5px}
+input[type=search],.btn{background:var(--surface);border:1px solid var(--border);
+ color:var(--text);border-radius:8px;font-size:13.5px}
+input[type=search]{padding:6px 10px;width:200px;outline:none}
+input[type=search]:focus{border-color:var(--accent)}
+.btn{padding:5px 10px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.count{color:var(--muted);font-size:12px;min-width:56px}
+.filters{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;font-size:12.5px;
+ color:var(--muted);align-items:center}
+.filters label{display:flex;gap:4px;align-items:center;cursor:pointer;user-select:none}
+.filters input{accent-color:var(--accent);margin:0}
+.filters .sep{opacity:.4}
+.layout{display:flex;max-width:1180px;margin:0 auto;gap:8px}
+nav{width:242px;flex:none;padding:20px 8px 60px;position:sticky;top:96px;
+ align-self:flex-start;max-height:calc(100vh - 110px);overflow-y:auto}
+nav h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 10px 8px}
+nav a{display:block;padding:6px 10px;border-radius:7px;color:var(--muted);
+ text-decoration:none;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+nav a:hover{background:var(--surface);color:var(--text)}
+.chat{flex:1;min-width:0;padding:20px 16px 120px}
+.filebar{background:var(--surface);border:1px solid var(--border);border-radius:13px;
+ padding:12px 16px;margin-bottom:22px;font-size:13.5px}
+.filebar h3{margin:0 0 8px;font-size:13px;color:var(--muted);font-weight:600}
+.filebar ul{margin:0;padding-left:0;list-style:none;columns:2;column-gap:22px}
+.filebar li{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;padding:1.5px 0;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap;break-inside:avoid}
+.filebar li b{color:var(--muted);font-weight:400}
+@media(max-width:700px){.filebar ul{columns:1}}
+.msg{margin:18px 0;scroll-margin-top:110px}
+.who{font-size:11.5px;color:var(--muted);margin:0 2px 5px;display:flex;gap:8px;align-items:baseline}
+.who b{font-weight:600;color:var(--text);font-size:12.5px}
+.who .num{opacity:.55;font-variant-numeric:tabular-nums}
+.who a{color:inherit;text-decoration:none}.who a:hover{color:var(--accent)}
+.card{padding:14px 18px;border-radius:14px;overflow-wrap:break-word}
+.user .card{background:var(--user-bg);border:1px solid var(--border);border-left:3px solid var(--user-bar)}
+.assistant .card{background:var(--surface);border:1px solid var(--border)}
+.card p{margin:0 0 10px}.card p:last-child{margin-bottom:0}
+.card>:first-child{margin-top:0}
+.card h3,.card h4,.card h5,.card h6{margin:15px 0 7px;font-size:1.02em}
+.card ul{margin:7px 0;padding-left:22px}.card li{margin:3px 0}
+code{background:color-mix(in srgb,var(--muted) 18%,transparent);padding:1px 5px;border-radius:5px;
+ font-size:.88em;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.codewrap{position:relative;margin:10px 0}
+.codewrap pre{background:var(--code-bg);color:var(--code-text);margin:0;padding:13px 15px;
+ border-radius:11px;overflow-x:auto;font-size:13px;line-height:1.6}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+.copy{position:absolute;top:8px;right:8px;opacity:0;transition:opacity .15s;
+ background:rgba(255,255,255,.12);color:#e6e6e9;border:none;border-radius:6px;
+ padding:3px 9px;font-size:11.5px;cursor:pointer}
+.codewrap:hover .copy{opacity:1}
+.tablewrap{overflow-x:auto;margin:10px 0}
+table{border-collapse:collapse;font-size:14px;width:100%}
+th,td{border:1px solid var(--border);padding:6px 11px;text-align:left}
+th{background:color-mix(in srgb,var(--muted) 12%,transparent);font-weight:600}
+details.think{background:var(--think-bg);border:1px solid var(--border);
+ border-left:3px solid var(--think-bar);border-radius:11px;margin:12px 0;font-size:14.5px}
+details.think>summary{cursor:pointer;padding:8px 14px;color:var(--muted);font-size:12.5px;list-style:none}
+details.think .card{background:none;border:none;padding:2px 16px 12px;font-style:italic;opacity:.92}
+details.meta-block{background:var(--meta-bg);border:1px dashed var(--border);
+ border-radius:11px;margin:12px 0;font-size:14px}
+details.meta-block>summary{cursor:pointer;padding:8px 14px;color:var(--muted);font-size:12.5px;list-style:none}
+details.meta-block .card{background:none;border:none;padding:2px 16px 12px}
+summary::-webkit-details-marker{display:none}
+summary:before{content:"▸ "}details[open]>summary:before{content:"▾ "}
+.toolrun{margin:10px 0;border:1px solid var(--border);border-radius:11px;
+ background:var(--tool-bg);overflow:hidden}
+.toolrun>summary{cursor:pointer;padding:7px 13px;color:var(--muted);font-size:12.5px;list-style:none}
+.toolrun .inner{padding:2px 10px 9px}
+details.tool{border-radius:8px;margin:3px 0;background:color-mix(in srgb,var(--surface) 70%,transparent)}
+details.tool>summary{cursor:pointer;padding:5px 10px;font-size:12.5px;list-style:none;
+ display:flex;gap:7px;align-items:baseline;font-family:ui-monospace,Menlo,monospace}
+details.tool>summary:before{content:""}
+details.tool .name{color:var(--accent);flex:none}
+details.tool .arg{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+details.tool .body{padding:2px 12px 10px;font-size:12.5px}
+details.tool .body h6{margin:8px 0 3px;font-size:11px;color:var(--muted);
+ text-transform:uppercase;letter-spacing:.06em}
+details.tool pre{background:var(--code-bg);color:var(--code-text);margin:0;padding:10px 12px;
+ border-radius:8px;overflow-x:auto;font-size:12px;line-height:1.55;max-height:340px}
+ul.todo{list-style:none;padding:0;margin:4px 0;font-size:13px}
+ul.todo li.done{opacity:.55;text-decoration:line-through}
+.shots{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.shots img{height:120px;width:auto;max-width:180px;object-fit:cover;object-position:top;
+ border-radius:9px;border:1px solid var(--border);cursor:zoom-in;display:block;
+ background:var(--meta-bg);transition:transform .12s,border-color .12s}
+.shots img:hover{transform:scale(1.03);border-color:var(--accent)}
+#lb,#media{position:fixed;inset:0;display:none;background:rgba(8,8,10,.93);
+ backdrop-filter:blur(6px)}
+#lb.open,#media.open{display:flex}
+#media{z-index:100}
+#lb{z-index:120;align-items:center;justify-content:center}
+#lb img{max-width:92vw;object-fit:contain;border-radius:8px;
+ max-height:calc(100vh - 176px);max-height:calc(100svh - 176px);
+ box-shadow:0 24px 70px rgba(0,0,0,.6)}
+#lb .nav{position:absolute;top:0;bottom:0;width:22vw;min-width:80px;border:none;background:none;
+ color:#fff;font-size:38px;cursor:pointer;opacity:.42;transition:opacity .15s;
+ display:flex;align-items:center;justify-content:center}
+#lb .nav:hover{opacity:1}
+#lbprev{left:0}#lbnext{right:0}
+.x{position:absolute;top:14px;right:18px;background:rgba(255,255,255,.13);color:#fff;border:none;
+ border-radius:9px;width:38px;height:38px;font-size:19px;cursor:pointer;line-height:1;z-index:2}
+.x:hover{background:rgba(255,255,255,.27)}
+#lbcount{position:absolute;top:18px;left:50%;transform:translateX(-50%);
+ color:#fff;opacity:.7;font-size:13px;max-width:min(78vw,760px);text-align:center;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
+#lbbottom{position:absolute;left:50%;transform:translateX(-50%);
+ bottom:calc(14px + env(safe-area-inset-bottom));z-index:3;
+ display:flex;flex-direction:column;align-items:center;gap:9px;
+ width:min(92vw,720px);text-align:center}
+#lbactions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+#lbactions button{background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:9px;
+ padding:9px 16px;font-size:13px;cursor:pointer;white-space:nowrap;
+ backdrop-filter:blur(8px)}
+#lbactions button:hover{background:rgba(255,255,255,.32)}
+#lbhint{color:#fff;opacity:.38;font-size:11.5px;line-height:1.5}
+#media{flex-direction:column}
+#mediabar{flex:none;display:flex;align-items:center;justify-content:space-between;
+ gap:14px;padding:14px 20px;color:#fff;border-bottom:1px solid rgba(255,255,255,.12)}
+#mediahead{opacity:.72;font-size:13.5px}
+#mediabar .tools{display:flex;gap:10px;align-items:center}
+#mediabar button{background:rgba(255,255,255,.13);color:#fff;border:none;border-radius:9px;
+ padding:8px 14px;font-size:13px;cursor:pointer;position:static;width:auto;height:auto}
+#mediabar button:hover{background:rgba(255,255,255,.28)}
+#mediascroll{flex:1;overflow-y:auto;padding:18px 24px 40px}
+#mediagrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+ gap:12px;max-width:1200px;margin:0 auto;width:100%}
+#mediagrid figure{margin:0;cursor:zoom-in}
+#mediagrid img{width:100%;height:170px;object-fit:cover;object-position:top;border-radius:10px;
+ border:1px solid rgba(255,255,255,.14);background:#000;display:block}
+#mediagrid figure:hover img{border-color:#fff}
+#mediagrid figcaption{color:#fff;opacity:.5;font-size:11.5px;padding:5px 2px 0;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#pill{position:fixed;right:20px;bottom:20px;z-index:40;background:var(--surface);
+ border:1px solid var(--border);border-radius:22px;padding:7px 14px;font-size:12.5px;
+ color:var(--muted);cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.14);
+ font-variant-numeric:tabular-nums;user-select:none}
+#pill:hover{color:var(--text);border-color:var(--accent)}
+@keyframes flash{0%,100%{box-shadow:0 0 0 0 transparent}
+ 15%,70%{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 45%,transparent)}}
+.msg.flash .card{animation:flash 1.8s ease-out;border-radius:14px}
+mark{background:var(--mark);color:#1c1c1e;border-radius:3px;padding:0 1px}
+mark.on{outline:2px solid var(--accent)}
+body.hide-think details.think{display:none}
+body.hide-tool .toolrun{display:none}
+body.hide-meta details.meta-block{display:none}
+body.hide-assistant .msg.assistant{display:none}
+
+/* ── touch devices: hover-only affordances never appear, so pin them visible ── */
+@media(hover:none){
+ .copy{opacity:.8}
+ #lb .nav{opacity:.6}
+ .shots img:hover{transform:none}
+ #lbactions button,.btn,nav a{min-height:38px}
+}
+
+/* ── narrow screens ── */
+#tocbtn{display:none}
+@media(max-width:860px){
+ .chat{padding:14px 12px 110px}
+ #tocbtn{display:inline-block}
+ h1{min-width:100%;order:-1}
+ input[type=search]{width:min(52vw,240px)}
+ /* Explicit box, not `inset:0`: the sidebar's own base rule left this at its content
+    height, so the panel opened without covering the page behind it. */
+ nav{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100dvh;
+  z-index:60;max-height:none;padding:0 14px 40px;
+  background:var(--bg);display:none;overflow-y:auto}
+ body.toc-open nav{display:block}
+ body.toc-open{overflow:hidden}
+ nav h2{position:sticky;top:0;background:var(--bg);padding:6px 10px 10px;margin:0;font-size:12px}
+ nav a{font-size:14px;padding:9px 10px;white-space:normal}
+ #lb .nav{width:64px;min-width:0;font-size:30px}
+ #mediabar{flex-wrap:wrap;gap:8px;padding:10px 14px}
+ #mediahead{width:100%;font-size:12px}
+ #mediascroll{padding:12px 14px 40px}
+ #mediagrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:9px}
+ #mediagrid img{height:130px}
+ #pill{right:12px;bottom:calc(12px + env(safe-area-inset-bottom))}
+}
+@media(max-width:520px){
+ .filters{gap:9px;font-size:12px}
+ .card{padding:12px 14px}
+ .shots img{height:96px;max-width:140px}
+}
+
+/* ── drop zone (only shown when no transcript is embedded) ── */
+#drop{max-width:640px;margin:14vh auto 0;padding:0 20px;text-align:center}
+#drop .zone{border:2px dashed var(--border);border-radius:20px;padding:52px 28px;
+ background:var(--surface);transition:border-color .15s,background .15s;cursor:pointer}
+#drop.over .zone{border-color:var(--accent);
+ background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
+#drop h2{margin:0 0 8px;font-size:20px}
+#drop p{margin:6px 0;color:var(--muted);font-size:14px;line-height:1.65}
+#drop .hint{margin-top:22px;font-size:12.5px;opacity:.8}
+#drop code{font-size:12.5px}
+#drop input{display:none}
+#drop .err{color:#e5484d;font-size:13px;margin-top:12px;min-height:18px}
+body.loaded #drop{display:none}
+body:not(.loaded) header .search,body:not(.loaded) .filters,
+body:not(.loaded) #mediabtn,body:not(.loaded) #tocbtn,
+body:not(.loaded) #exportbtn,body:not(.loaded) #pill,body:not(.loaded) .layout{display:none}
+
+#drop .hint{margin-top:26px;text-align:left;font-size:13px;line-height:1.75;color:var(--muted)}
+#drop .hint p{margin:0 0 9px}
+#drop .hint .fine{margin-top:16px;font-size:12px;opacity:.75}
+#drop kbd{display:inline-block;background:var(--surface);border:1px solid var(--border);
+ border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:12px;
+ font-family:ui-monospace,Menlo,monospace;margin:0 1px}
+.pathbtn{background:var(--surface);border:1px solid var(--border);color:var(--accent);
+ border-radius:6px;padding:2px 8px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;
+ cursor:pointer}
+.pathbtn:hover{border-color:var(--accent)}
+
+.filters .n{opacity:.65}
+
+/* Reading measure: research puts comfortable prose at 50–75 characters, and WCAG 1.4.8
+   caps it at 80. Cards were running past 110. Tables and code keep the full width. */
+.card p, .card li, .card h3, .card h4, .card h5, .card h6 { max-width: 72ch }
+details.tool .body h6.err { color: #e5484d }
+.card .warn, .body .warn { color: #e5a23d; font-size: 12.5px; margin: 6px 0 0 }
+html, body { overflow-x: hidden }
+.layout, .chat, header { max-width: 100%; }
+.filebar ul { columns: 2 }
+@media (max-width: 900px) { .filebar ul { columns: 1 } }
+
+/* ── bulk import: the picker shown when several transcripts are dropped at once ── */
+#picker{display:none;max-width:820px;margin:0 auto;padding:34px 18px 90px}
+body.picking #picker{display:block}
+body.picking .layout,body.picking #drop{display:none}
+body.picking header .search,body.picking .filters,body.picking .stats,
+body.picking .statsmore,body.picking #mediabtn,body.picking #exportbtn,
+body.picking #tocbtn,body.picking #pill{display:none}
+#picker h2{font-size:15px;color:var(--muted);font-weight:600;margin:0 0 14px}
+#picker .rows{display:flex;flex-direction:column;gap:8px}
+.srow{display:grid;gap:3px;text-align:left;width:100%;cursor:pointer;
+ background:var(--surface);border:1px solid var(--border);border-radius:12px;
+ padding:12px 16px;color:var(--text);font:inherit}
+.srow:hover{border-color:var(--accent)}
+.srow .t{font-weight:600;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srow .m{font-size:12.5px;color:var(--muted)}
+.srow .f{font-size:11.5px;color:var(--muted);opacity:.6;font-family:ui-monospace,Menlo,monospace;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── header stats: chips, not one long dot-separated line ── */
+.stats{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:7px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);
+ background:color-mix(in srgb,var(--muted) 11%,transparent);
+ border:1px solid transparent;border-radius:7px;padding:3px 9px;white-space:nowrap}
+.chip b{font-weight:400;opacity:.75;font-size:11.5px}
+.chip.more{cursor:pointer;font-family:inherit;color:var(--muted);
+ border-color:var(--border);background:none;padding:3px 8px}
+.chip.more:hover{color:var(--text);border-color:var(--accent)}
+.statsmore{display:none;margin-top:8px;font-size:12.5px;color:var(--muted);
+ background:var(--surface);border:1px solid var(--border);border-radius:10px;
+ padding:9px 13px;max-width:760px}
+.statsmore.open{display:block}
+.statsmore div{display:flex;gap:10px;padding:2px 0;align-items:baseline}
+.statsmore div span{flex:none;width:130px;opacity:.7}
+
+/* ── Card refinements ─────────────────────────────────────────────────────────
+   Cards stay, but they should not all carry the same weight. Three surfaces with
+   identical fill, border and radius is the shape that reads as generated. So the
+   file summary drops to a flat strip (it is metadata, not speech), the assistant
+   card softens to let long prose breathe, and only your own turns keep the full
+   accent treatment. */
+.filebar{background:none;border:none;border-bottom:1px solid var(--border);
+ border-radius:0;padding:0 2px 15px;margin-bottom:6px}
+.filebar h3{font-size:12px;letter-spacing:.02em}
+.assistant .card{background:color-mix(in srgb,var(--surface) 62%,transparent);
+ border-color:color-mix(in srgb,var(--border) 62%,transparent)}
+.msg{margin:22px 0}
+.msg+.msg{margin-top:24px}
+.who{margin-bottom:6px}
+.who b{letter-spacing:.01em}
+.user .who b{color:var(--accent)}
+.card{border-radius:12px}
+.user .card{padding-left:16px}
+/* Long turns get a little more air between paragraphs than short ones need. */
+.card p+p{margin-top:2px}
+
+/* Your turns are marked by the accent-coloured speaker label and a tint, not by a stripe.
+   A coloured bar down the side of a card is decoration doing a job the label already does. */
+.user .card{background:var(--user-bg);border:1px solid var(--user-edge);border-left-width:1px;
+ padding-left:18px}
+body.hide-user .msg.user{display:none}
+
+/* Per-message copy. Copies the markdown the record held, not the rendered text, so a table
+   or a code fence survives the trip. */
+.msgcopy{opacity:0;transition:opacity .15s,color .15s;background:none;border:none;
+ color:var(--muted);cursor:pointer;font-size:12.5px;padding:0 4px;line-height:1;
+ margin-left:2px}
+.msg:hover .msgcopy,.msgcopy:focus-visible{opacity:.7}
+.msgcopy:hover{opacity:1;color:var(--accent)}
+.msgcopy.ok{opacity:1;color:#4abe82}
+@media(hover:none){.msgcopy{opacity:.55}}
+
+/* Table of contents panel header. The close button only exists where the panel is a
+   full-screen sheet; on a wide screen the sidebar is always visible and needs no dismiss. */
+.navbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#tocclose{display:none;background:var(--surface);border:1px solid var(--border);
+ color:var(--text);border-radius:9px;width:36px;height:36px;font-size:16px;cursor:pointer;
+ flex:none;line-height:1}
+#tocclose:hover{border-color:var(--accent)}
+@media(max-width:860px){
+ #tocclose{display:block}
+ .navbar{position:sticky;top:0;z-index:1;background:var(--bg);
+  padding:12px 0 10px;margin-bottom:2px;border-bottom:1px solid var(--border)}
+ nav h2{position:static;padding:0 4px;margin:0}
+}
+
+/* ── Narrow header ────────────────────────────────────────────────────────────
+   Under about 560px the header was eating 440px of height before a single message
+   appeared: three rows of buttons, two rows of chips. Labels collapse to their icons
+   and the chips fold into the ⓘ panel, which now carries every value they showed, so
+   nothing is lost by hiding them. */
+@media(max-width:640px){
+ header{padding:7px 12px 6px}
+ .row1{gap:8px}
+ h1{font-size:14px}
+ .btn{padding:5px 8px}
+ input[type=search]{width:auto;flex:1;min-width:0}
+ .search{flex:1;min-width:0}
+ .filters{gap:10px;margin-top:5px}
+ .stats{margin-top:5px}
+ .chip{padding:2px 8px;font-size:11.5px}
+}
+@media(max-width:560px){
+ .stats .chip:not(.more){display:none}
+ .statsmore{max-width:100%}
+ .statsmore div span{width:96px}
+}
+@media(max-width:400px){
+ .filters label span{display:none}
+ .count{min-width:0}
+}
+
+/* Inline code is the one thing that can push the page wider than the screen: it is a long
+   unbreakable monospace token inside prose. `anywhere` (not `break-word`) is what actually
+   lowers the element's min-content width, which is what the overflow depends on. Code
+   blocks are excluded, since those scroll inside their own container by design. */
+code{overflow-wrap:anywhere}
+pre code{overflow-wrap:normal}
+.filebar li{overflow-wrap:anywhere;white-space:normal}
+
+/* ── Priority+ header ─────────────────────────────────────────────────────────
+   Seven controls plus a title, filters and stats will not sit on one line, and letting
+   them wrap produced a five-row header that pushed the conversation off the screen. The
+   search box and the title keep their place at every width; everything else collapses
+   into one overflow button once the row stops fitting. */
+/* margin-left:auto keeps the actions on the right edge at every width. Below 860px the
+   title takes its own row, so it stops flexing and there is nothing else to push them. */
+.actions{position:relative;display:flex;align-items:center;margin-left:auto}
+#morebtn{display:none;font-size:15px;line-height:1;padding:5px 11px}
+.actionmenu{display:flex;gap:6px;align-items:center}
+.metarow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px}
+.metarow .filters,.metarow .stats{margin-top:6px}
+
+@media(max-width:1000px){
+ #morebtn{display:block}
+ .actionmenu{display:none;position:absolute;right:0;top:calc(100% + 7px);z-index:50;
+  flex-direction:column;align-items:stretch;gap:4px;padding:6px;min-width:158px;
+  background:var(--surface);border:1px solid var(--border);border-radius:11px;
+  box-shadow:0 10px 30px rgba(0,0,0,.28)}
+ body.menu-open .actionmenu{display:flex}
+ .actionmenu .btn{border:none;background:none;text-align:left;padding:7px 10px;font-size:13.5px}
+ .actionmenu .btn:hover{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+ .actionmenu .lbl{display:inline}
+ .actionmenu #mediabtn:after{content:" Media"}
+ .actionmenu #tocbtn:after{content:" Contents"}
+}
+
+/* ── Print, which is also how you get a PDF ───────────────────────────────────
+   Cmd+P already produces a PDF; it just needed to stop printing the chrome. Sticky
+   headers repeat on every page, dark backgrounds waste ink, and collapsed sections
+   print as their summary line unless opened. */
+@media print{
+ header,nav,#pill,#lb,#media,#drop,.msgcopy,.copy,.actions{display:none!important}
+ body{background:#fff;color:#000}
+ .layout{display:block;max-width:none}
+ .chat{padding:0}
+ .card{background:none!important;border:1px solid #ddd!important;break-inside:avoid}
+ .user .card{background:#f4f7ff!important}
+ .who{color:#555}
+ .who b{color:#000}
+ .codewrap pre,details.tool pre{background:#f3f3f5;color:#111;border:1px solid #e0e0e4;
+  white-space:pre-wrap;max-height:none}
+ code{background:#f0f0f2;color:#111}
+ .shots img{height:auto;max-width:46%;break-inside:avoid}
+ details.think,details.meta-block,.toolrun{display:none}
+ .filebar{border-bottom:1px solid #ccc}
+ a{color:#000;text-decoration:underline}
+ .msg{break-inside:avoid-page}
+ table,th,td{border-color:#ccc!important}
+ th{background:#f3f3f5!important}
+}
+
+/* A dropped .md is a document, not a conversation: no speaker, no filters, no prompt index.
+   Hiding them is what stops the page looking broken rather than repurposed. */
+body.docmode .filters,body.docmode .stats,body.docmode .statsmore,
+body.docmode #mediabtn,body.docmode #pill{display:none}
+body.docmode .layout{max-width:1040px}
+.msg.doc{margin:0}
+.msg.doc .card{background:none;border:none;padding:22px 4px 60px}
+.msg.doc .card>:first-child{margin-top:0}
+
+/* Headings need to read as headings. At a flat 1.02em every level looked like bold text,
+   which is survivable inside a chat turn and wrong for a document. */
+.card h2{font-size:1.32em;margin:20px 0 8px}
+.card h3{font-size:1.16em;margin:18px 0 7px}
+.card h4{font-size:1.04em;margin:16px 0 6px}
+.card h5,.card h6{font-size:.97em;margin:14px 0 5px;color:var(--muted)}
+.card ol{margin:7px 0;padding-left:24px}
+.card ol li{margin:3px 0}
+
+/* The title doubles as the way back, the way a site logo does. Only once something is
+   loaded, since at the drop zone there is nowhere to go. */
+body.loaded h1,body.picking h1{cursor:pointer}
+body.loaded h1:hover,body.picking h1:hover{color:var(--accent)}
+
+/* The export popover shares the overflow menu's anchoring so it lands in the same place
+   whether the button was in the header or inside ⋯. */
+#exportmenu{display:none;position:absolute;right:0;top:calc(100% + 7px);z-index:51;
+ flex-direction:column;align-items:stretch;gap:2px;padding:6px;min-width:214px;
+ background:var(--surface);border:1px solid var(--border);border-radius:11px;
+ box-shadow:0 10px 30px rgba(0,0,0,.28)}
+body.export-open #exportmenu{display:flex}
+#exportmenu .btn{border:none;background:none;text-align:left;padding:8px 10px;
+ font-size:13.5px;display:flex;flex-direction:column;gap:1px;line-height:1.35}
+#exportmenu .btn:hover{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+#exportmenu small{font-size:11.5px;color:var(--muted);font-weight:400}
+body.picking #exportmenu,body:not(.loaded) #exportmenu{display:none}
+
+/* A document's contents list indents by heading level, which is the only cue that says
+   where you are in a structure rather than just what is in it. */
+nav a.lvl2{font-weight:600;color:var(--text);margin-top:7px}
+nav a.lvl3{padding-left:20px}
+nav a.lvl4{padding-left:32px;font-size:12.5px}
+nav a.lvl5,nav a.lvl6{padding-left:42px;font-size:12px;opacity:.85}
+body.docmode nav a{white-space:normal}
+
+/* Wikilinks cannot resolve outside a vault, so they stay visible as references rather than
+   being silently flattened into plain words. */
+.wikilink{color:var(--accent);opacity:.85}
+#drop .zone .fine{margin-top:14px;font-size:12.5px;opacity:.7}
+
+/* ── Links panel: the same shape as media mode, for the other kind of artefact a session
+   accumulates. An index without a way back to the context is just a bookmark dump. ── */
+#links{position:fixed;inset:0;z-index:100;display:none;flex-direction:column;
+ background:rgba(8,8,10,.93);backdrop-filter:blur(6px)}
+#links.open{display:flex}
+#linkhead{opacity:.72;font-size:13.5px;color:#fff}
+#linklist{max-width:920px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:6px}
+.linkrow{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;
+ background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09)}
+.linkrow:hover{border-color:rgba(255,255,255,.28)}
+.linkrow a{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;
+ text-decoration:none;color:#fff}
+.linkrow a b{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.linkrow a span{font-size:11.5px;opacity:.5;font-family:ui-monospace,Menlo,monospace;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.linkrow button{flex:none;background:rgba(255,255,255,.12);color:#fff;border:none;
+ border-radius:7px;padding:5px 10px;font-size:12px;cursor:pointer;
+ font-variant-numeric:tabular-nums}
+.linkrow button:hover{background:rgba(255,255,255,.28)}
+body.picking #linkbtn,body.docmode #linkbtn{display:none}
+.btn:disabled{opacity:.4;cursor:default}
+.btn:disabled:hover{border-color:var(--border)}
+</style>
+</head>
+<body>
+<header>
+  <div class="row1">
+    <h1>Claude Transcript Viewer</h1>
+    <div class="search">
+      <input id="q" type="search" placeholder="Search…  ( / )">
+      <button class="btn" id="prev">↑</button><button class="btn" id="next">↓</button>
+      <span class="count" id="cnt"></span>
+    </div>
+    <div class="actions">
+      <button class="btn" id="morebtn" title="More">⋯</button>
+      <div class="actionmenu" id="actionmenu">
+        <button class="btn" id="mediabtn" hidden>🖼</button>
+        <button class="btn" id="linkbtn" hidden>🔗</button>
+        <button class="btn" id="exportbtn" title="Save this transcript">⤓<span class="lbl"> Export</span></button>
+        <button class="btn" id="homebtn" title="Back to the start">⌂<span class="lbl"> Home</span></button>
+        <button class="btn" id="tocbtn" title="Table of contents">☰</button>
+      </div>
+      <div class="actionmenu" id="exportmenu">
+        <button class="btn" id="exp-html">HTML<small>one self-contained file</small></button>
+        <button class="btn" id="exp-md">Markdown<small>for a notes vault or an issue</small></button>
+        <button class="btn" id="exp-pdf">PDF<small>via your browser's print dialog</small></button>
+      </div>
+    </div>
+  </div>
+  <div class="metarow">
+    <div class="filters" id="filters"></div>
+    <div class="stats" id="stats"></div>
+  </div>
+  <div class="statsmore" id="statsmore"></div>
+</header>
+
+<div id="drop">
+  <div class="zone">
+    <h2>Drop a Claude Code transcript here</h2>
+    <p>A <code>.jsonl</code> file from <code>~/.claude/projects/</code>. You can also click to browse.</p>
+    <p>Everything is parsed in this page. Nothing is uploaded, and no network request is made.</p>
+    <p class="fine">Reloading starts over: a browser cannot re-read a dropped file on its own.
+    Use <b>Export</b> to keep one.</p>
+    <input id="fileinput" type="file" multiple
+           accept=".jsonl,.md,.markdown,.txt,application/json,text/plain,text/markdown">
+  </div>
+  <div class="err" id="droperr"></div>
+  <div class="hint">
+    <p><b>That folder is hidden, and this page cannot open the picker inside it.</b> The API
+      that could (<code>showDirectoryPicker</code>) rejects on a local file, by spec: a
+      <code>file://</code> page is an opaque origin. Keeping this page openable offline and
+      serverless is worth more than a nicer picker. Two ways around it:</p>
+    <p>In the picker, press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>G</kbd> and paste
+      <button id="copypath" class="pathbtn" title="Click to copy">~/.claude/projects</button></p>
+    <p>Or open a Finder window there once, and drag a file straight onto this page:<br>
+      <code>open ~/.claude/projects</code></p>
+    <p class="fine">Transcripts are deleted after 30 days unless you raise
+      <code>cleanupPeriodDays</code> in <code>~/.claude/settings.json</code>.</p>
+  </div>
+</div>
+
+<div id="picker"></div>
+
+<div class="layout">
+  <nav>
+    <div class="navbar">
+      <h2 id="navtitle">Your prompts</h2>
+      <button id="tocclose" title="Close (Esc)">✕</button>
+    </div>
+    <div id="toc"></div>
+  </nav>
+  <main class="chat"></main>
+</div>
+
+<div id="lb">
+  <button class="nav" id="lbprev" title="Previous (←)">‹</button>
+  <img id="lbimg" alt="">
+  <button class="nav" id="lbnext" title="Next (→)">›</button>
+  <button class="x" id="lbclose" title="Close (Esc)">✕</button>
+  <span id="lbcount"></span>
+  <div id="lbbottom">
+    <div id="lbactions">
+      <button id="lbgoto">↩ Jump to message</button>
+      <button id="lbcopy" title="Copy the image, then paste it into images.google.com">⧉ Copy image</button>
+    </div>
+    <span id="lbhint">← → or swipe to navigate · Esc to close ·
+      right-click an image for your browser's reverse-image search</span>
+  </div>
+</div>
+
+<div id="media">
+  <div id="mediabar">
+    <span id="mediahead"></span>
+    <div class="tools">
+      <button id="dlall" title="Download every image">⤓ Download all</button>
+      <button id="mediaclose" title="Close (Esc)">✕ Close</button>
+    </div>
+  </div>
+  <div id="mediascroll"><div id="mediagrid"></div></div>
+</div>
+
+<div id="links">
+  <div id="mediabar">
+    <span id="linkhead"></span>
+    <div class="tools"><button id="linkclose" title="Close (Esc)">✕ Close</button></div>
+  </div>
+  <div id="mediascroll"><div id="linklist"></div></div>
+</div>
+
+<div id="pill" title="Back to top">1 / 1</div>
+<script>/* Claude Transcript Viewer — parsing, rendering and UI.
+ *
+ * This is the ONLY implementation. Two entry points feed it the same records:
+ *   · a .jsonl dropped onto the page (parsed here, in the browser)
+ *   · window.__TRANSCRIPT__, inlined by claude_transcript_viewer.py
+ * The Python side never renders anything; it slims records, embeds disk-referenced
+ * screenshots, and injects the result into this same shell.
+ */
+(() => {
+'use strict';
+
+// Captured before anything renders, so "Export" can rebuild a clean copy of this page.
+const SHELL = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+
+const TOOL_ICON = {
+  Bash: '⚡', Read: '📖', Edit: '✏️', Write: '📝', NotebookEdit: '📝',
+  Glob: '🔍', Grep: '🔍', WebSearch: '🌐', WebFetch: '🌐',
+  Task: '🤖', Agent: '🤖', Skill: '🧩', TodoWrite: '☑️',
+  SendUserFile: '📤', Artifact: '🎨', AskUserQuestion: '❓', ToolSearch: '🔎',
+  TaskCreate: '📌', TaskUpdate: '📌', TaskStop: '📌', Monitor: '👁', Workflow: '🔀',
+};
+const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);
+const MAX_INPUT = 900, MAX_RESULT = 1400;
+
+// ───────────────────────── markdown ─────────────────────────
+
+const esc = s => String(s).replace(/[&<>"]/g, c =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function inlineMd(s) {
+  return s
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|\W)\*([^*\n]+)\*(?!\w)/g, '$1<em>$2</em>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" rel="noreferrer">$1</a>')
+    // Obsidian wikilinks have no target outside a vault; mark them so they read as
+    // references instead of as stray brackets.
+    .replace(/\[\[([^\]|]+)(\|[^\]]+)?\]\]/g, (m, n) => `<span class="wikilink">${n}</span>`);
+}
+
+// Filled as headings are rendered, so a document's contents list is built from what the
+// page actually produced rather than from a second pass over the source that could disagree.
+let HEADINGS = [];
+
+/** A run of non-list lines: a heading if it opens with #, then whatever follows.
+ *  One implementation, so the heading path cannot be skipped depending on what comes after. */
+function emitProse(lines, out) {
+  if (!lines.length) return;
+  let rest = lines;
+  if (/^#{1,6}\s/.test(lines[0])) {
+    const lvl = Math.min(lines[0].match(/^#+/)[0].length + 1, 6);
+    const label = lines[0].replace(/^#+\s*/, '');
+    const id = 'h' + (HEADINGS.length + 1);
+    // `label` has already been through esc(); escaping it again in the contents list
+    // would render an ampersand as &amp;.
+    HEADINGS.push({ lvl, id, label: label.replace(/[*`_]/g, '') });
+    out.push(`<h${lvl} id="${id}">` + inlineMd(label) + `</h${lvl}>`);
+    rest = lines.slice(1);
+  }
+  const body = rest.join('\n').trim();
+  if (body) out.push('<p>' + inlineMd(body).replace(/\n/g, '<br>') + '</p>');
+}
+
+function mdToHtml(text) {
+  const out = [];
+  text.split('```').forEach((part, i) => {
+    if (i % 2 === 1) {
+      const nl = part.indexOf('\n');
+      const code = nl === -1 ? part : part.slice(nl + 1);
+      out.push('<div class="codewrap"><button class="copy">Copy</button><pre><code>' +
+        esc(code.replace(/\s+$/, '')) + '</code></pre></div>');
+      return;
+    }
+    esc(part).split(/\n\s*\n/).forEach(block => {
+      if (!block.trim()) return;
+      const lines = block.split('\n');
+      const isItem = l => /^\s*([-*+]|\d+\.)\s/.test(l);
+      const firstItem = lines.findIndex(isItem);
+      if (firstItem !== -1 && lines.slice(firstItem).every(isItem)) {
+        // A lead-in followed by a list is the most common shape in these documents, and
+        // that lead-in is very often a heading with no blank line under it. Handing it
+        // straight to the paragraph branch printed "## Concepts" as body text.
+        emitProse(lines.slice(0, firstItem), out);
+        const items = lines.slice(firstItem);
+        const tag = /^\s*\d+\.\s/.test(items[0]) ? 'ol' : 'ul';
+        out.push(`<${tag}>` + items.map(l =>
+          '<li>' + inlineMd(l.replace(/^\s*([-*+]|\d+\.)\s/, '')) + '</li>').join('') + `</${tag}>`);
+      } else if (lines[0].trimStart().startsWith('|') && lines.length > 1) {
+        const rows = [];
+        lines.forEach((l, j) => {
+          const cells = l.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+          if (cells.every(c => /^[-: ]*$/.test(c))) return;
+          const tag = j === 0 ? 'th' : 'td';
+          rows.push('<tr>' + cells.map(c => `<${tag}>${inlineMd(c)}</${tag}>`).join('') + '</tr>');
+        });
+        out.push('<div class="tablewrap"><table>' + rows.join('') + '</table></div>');
+      } else {
+        emitProse(lines, out);
+      }
+    });
+  });
+  return out.join('\n');
+}
+
+const clip = (s, limit) => s.length <= limit ? s
+  : s.slice(0, limit) + `\n… (truncated, ${s.length.toLocaleString()} chars total)`;
+const preBlock = (s, limit) => '<pre><code>' + esc(clip(s, limit)) + '</code></pre>';
+
+// ───────────────────────── parsing ─────────────────────────
+
+function textOf(content) {
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content))
+    return content.filter(c => c && c.type === 'text').map(c => c.text || '').join('\n');
+  return '';
+}
+
+// A transcript is untrusted input: someone can hand you a .jsonl. Both halves of a data:
+// URI are attacker-controlled, and they land in an `src` attribute, so a media_type of
+// `png" onerror="…` would execute. Whitelist the type and require real base64 instead of
+// escaping after the fact.
+const MEDIA_OK = /^image\/(png|jpeg|jpg|gif|webp|avif)$/i;
+const B64_OK = /^[A-Za-z0-9+/=\s]+$/;
+
+function imagesOf(content) {
+  if (!Array.isArray(content)) return [];
+  const out = [];
+  for (const b of content) {
+    if (!b || b.type !== 'image' || !b.source || b.source.type !== 'base64') continue;
+    const data = b.source.data;
+    if (typeof data !== 'string' || !B64_OK.test(data)) continue;
+    const type = MEDIA_OK.test(b.source.media_type || '') ? b.source.media_type : 'image/png';
+    out.push(`data:${type};base64,${data.replace(/\s/g, '')}`);
+  }
+  return out;
+}
+
+const shortPath = (p, cwd) => (cwd && p.startsWith(cwd)) ? p.slice(cwd.length).replace(/^\/+/, '') : p;
+
+function toolLabel(name, inp, cwd) {
+  const g = k => (inp && typeof inp === 'object' && inp[k] != null) ? String(inp[k]) : '';
+  switch (name) {
+    case 'Bash': return g('command').split(/\s+/).join(' ').slice(0, 110) || '(empty command)';
+    case 'Read': case 'Edit': case 'Write': case 'NotebookEdit':
+      return shortPath(g('file_path') || g('notebook_path'), cwd);
+    case 'Glob': case 'Grep':
+      return (g('pattern') + (g('path') ? '  in ' + shortPath(g('path'), cwd) : '')).slice(0, 110);
+    case 'WebSearch': return g('query').slice(0, 110);
+    case 'WebFetch': return g('url').slice(0, 110);
+    case 'Task': case 'Agent': return g('description').slice(0, 110);
+    case 'Skill': return g('skill');
+    case 'TodoWrite': {
+      const t = (inp && inp.todos) || [];
+      return `${t.filter(x => x.status === 'completed').length} / ${t.length} done`;
+    }
+    default: return JSON.stringify(inp || {}).slice(0, 110);
+  }
+}
+
+function todoHtml(inp) {
+  const rows = ((inp && inp.todos) || []).map(t => {
+    const mark = t.status === 'completed' ? '✅' : t.status === 'in_progress' ? '🔄' : '⬜️';
+    const cls = t.status === 'completed' ? ' class="done"' : '';
+    return `<li${cls}>${mark} ${esc(t.content || t.activeForm || '')}</li>`;
+  });
+  return '<ul class="todo">' + rows.join('') + '</ul>';
+}
+
+/** records -> { items, files, tools, tokensOut, cwd, title } */
+function parseRecords(records) {
+  const results = new Map();
+  let cwd = '', tokensOut = 0, title = '', aiTitle = '';
+  let branch = '', version = '', durationMs = 0, turns = 0, sidechain = 0;
+
+  for (const r of records) {
+    if (r.type === 'ai-title') { aiTitle = r.aiTitle || aiTitle; continue; }
+    if (r.type === 'system' && r.subtype === 'turn_duration') {
+      durationMs += r.durationMs || 0; turns++; continue;
+    }
+    if (!cwd && r.cwd) cwd = r.cwd;
+    if (!branch && r.gitBranch) branch = r.gitBranch;
+    if (!version && r.version) version = r.version;
+    if (r.isSidechain) sidechain++;
+    const usage = (r.message && r.message.usage) || {};
+    tokensOut += usage.output_tokens || 0;
+    const c = r.message && r.message.content;
+    if (Array.isArray(c))
+      for (const b of c)
+        if (b && b.type === 'tool_result') {
+          const rc = b.content;
+          results.set(b.tool_use_id, typeof rc === 'string' ? rc
+            : Array.isArray(rc) ? rc.filter(x => x && x.text).map(x => x.text).join('\n') : '');
+        }
+    if (!title && r.type === 'user' && !r.isMeta) {
+      const t = textOf(c).trim().split(/\s+/).join(' ');
+      if (t && !t.startsWith('<')) title = t.slice(0, 60);
+    }
+  }
+
+  const items = [], files = new Map(), tools = new Map();
+  const skills = new Set();
+  const bump = (m, k) => m.set(k, (m.get(k) || 0) + 1);
+
+  for (const r of records) {
+    if (r.type !== 'user' && r.type !== 'assistant') continue;
+    if (r.attributionSkill) skills.add(r.attributionSkill);
+    const content = (r.message && r.message.content) || '';
+    const ts = r.timestamp || '';
+
+    if (r.type === 'user') {
+      const text = textOf(content).trim();
+      const pics = imagesOf(content);
+      if (!text && !pics.length) continue;
+      if (text.startsWith('<') && !pics.length) continue;
+      items.push({ kind: r.isMeta ? 'meta' : 'user', text, pics, ts });
+      continue;
+    }
+
+    const blocks = Array.isArray(content) ? content : [{ type: 'text', text: String(content) }];
+    for (const b of blocks) {
+      if (!b || typeof b !== 'object') continue;
+      if (b.type === 'thinking') {
+        // Claude Code persists only a signature here — the reasoning text is not saved.
+        // Rendered anyway so it appears automatically if that ever changes.
+        const t = (b.thinking || '').trim();
+        if (t) items.push({ kind: 'think', text: t, ts });
+      } else if (b.type === 'text') {
+        const t = (b.text || '').trim();
+        if (t) items.push({ kind: 'assistant', text: t, pics: imagesOf([b]), ts });
+      } else if (b.type === 'tool_use') {
+        const name = b.name || '?', inp = b.input || {};
+        bump(tools, name);
+        if (WRITE_TOOLS.has(name)) {
+          const fp = inp.file_path || inp.notebook_path;
+          if (fp) bump(files, shortPath(fp, cwd));
+        }
+        items.push({
+          kind: 'tool', name, input: inp, ts,
+          label: toolLabel(name, inp, cwd), result: results.get(b.id) || '',
+          extra: r.toolUseResult || null,
+        });
+      }
+    }
+  }
+  return {
+    items, files, tools, tokensOut, cwd, skills,
+    branch, version, durationMs, turns, sidechain,
+    title: aiTitle || title || '(no preview)',
+    subtitle: aiTitle ? title : '',
+  };
+}
+
+/** A plain markdown file, shaped like a model so it goes through the same renderer.
+ *
+ *  This is not a second feature: the markdown renderer was already here for message bodies,
+ *  and refusing a .md file was an artificial restriction rather than a design. Everything
+ *  transcript-specific (speakers, filters, the prompt index) hides, because none of it means
+ *  anything for a document.
+ */
+function markdownModel(raw, name) {
+  // Nearly every .md worth reading opens with YAML frontmatter, which is metadata for the
+  // tool that wrote it and noise for the person reading it.
+  const fm = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
+  const text = (fm ? raw.slice(fm[0].length) : raw).replace(/^\s+/, '');
+  const meta = fm ? fm[1] : '';
+  const heading = (text.match(/^#\s+(.+)$/m) || [])[1]
+    || (meta.match(/^name:\s*(.+)$/m) || [])[1];
+  return {
+    items: [{ kind: 'doc', text, ts: '' }],
+    frontmatter: meta.trim(),
+    files: new Map(), tools: new Map(), skills: new Set(),
+    tokensOut: 0, cwd: '', branch: '', version: '',
+    durationMs: 0, turns: 0, sidechain: 0,
+    title: (heading || name.replace(/\.(md|markdown|txt)$/i, '')).slice(0, 80),
+    subtitle: '', isDoc: true,
+  };
+}
+
+/** Split raw JSONL text into records, skipping unparseable lines. */
+function parseJsonl(text) {
+  const out = [];
+  for (const line of text.split('\n')) {
+    const s = line.trim();
+    if (!s) continue;
+    try { out.push(JSON.parse(s)); } catch { /* partial write / corrupt line */ }
+  }
+  return out;
+}
+
+// ───────────────────────── rendering ─────────────────────────
+
+const dur = ms => {
+  if (!ms) return '';
+  const m = Math.round(ms / 60000);
+  return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`;
+};
+
+const LINKS = [];
+const URL_RE = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|(?<!\()\b(https?:\/\/[^\s<>"')\]]+)/g;
+
+/** Every address the session cited, in order, each remembering which message it came from.
+ *  Same shape as media mode: an index is only useful if it can take you back to the context. */
+function collectLinks(text, mid, seq) {
+  for (const m of text.matchAll(URL_RE)) {
+    const url = m[2] || m[3];
+    if (!url) continue;
+    const clean = url.replace(/[.,;:]+$/, '');
+    const hit = LINKS.find(l => l.url === clean);
+    if (hit) { hit.count++; continue; }
+    LINKS.push({ url: clean, label: m[1] || '', mid, seq, count: 1 });
+  }
+}
+
+function render(model, srcName) {
+  MSG_TEXT.clear();
+  HEADINGS = [];
+  LINKS.length = 0;
+  const { items, files, tools, tokensOut, title, subtitle,
+          branch, durationMs, turns, sidechain, skills } = model;
+  const body = [], toc = [], run = [];
+  const n = { user: 0, assistant: 0, think: 0, tool: 0, meta: 0, img: 0 };
+  let seq = 0;
+
+  const flushRun = () => {
+    if (!run.length) return;
+    const kinds = new Map();
+    run.forEach(([name]) => kinds.set(name, (kinds.get(name) || 0) + 1));
+    const head = [...kinds.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
+      .map(([k, v]) => (TOOL_ICON[k] || '🔧') + k + (v > 1 ? '×' + v : '')).join(' · ');
+    body.push(`<details class="toolrun"><summary>🔧 ${run.length} tool actions · ${head}` +
+      `</summary><div class="inner">${run.map(([, h]) => h).join('')}</div></details>`);
+    run.length = 0;
+  };
+
+  let lastMid = 'm1', lastSeq = 1;
+  for (const it of items) {
+    if (it.kind === 'tool') {
+      n.tool++;
+      if (it.name === 'WebFetch' && it.input && it.input.url)
+        collectLinks(String(it.input.url), lastMid, lastSeq);
+      const x = it.extra || {};
+      let detail = it.name === 'TodoWrite' ? todoHtml(it.input)
+        : '<h6>Input</h6>' + preBlock(typeof it.input === 'string' ? it.input
+          : JSON.stringify(it.input, null, 1), MAX_INPUT);
+      // stdout and stderr arrive merged in tool_result; when the structured result kept
+      // them apart, show them apart, because an error reads differently from output.
+      if (x.stdout) detail += '<h6>Output</h6>' + preBlock(x.stdout, MAX_RESULT);
+      if (x.stderr) detail += '<h6 class="err">stderr</h6>' + preBlock(x.stderr, MAX_RESULT);
+      if (!x.stdout && !x.stderr && it.result)
+        detail += '<h6>Result</h6>' + preBlock(it.result, MAX_RESULT);
+      if (x.interrupted) detail += '<p class="warn">Interrupted before it finished.</p>';
+      run.push([it.name,
+        '<details class="tool"><summary>' +
+        `<span class="name">${TOOL_ICON[it.name] || '🔧'} ${esc(it.name)}</span>` +
+        `<span class="arg">${esc(it.label)}</span></summary>` +
+        `<div class="body">${detail}</div></details>`]);
+      continue;
+    }
+    flushRun();
+    const stamp = it.ts ? `<span data-ts="${esc(it.ts)}"></span>` : '';
+
+    if (it.kind === 'meta') {
+      n.meta++;
+      const head = (it.text.split('\n')[0] || '').replace(/^#+\s*/, '').trim().slice(0, 70)
+        || 'Injected content';
+      body.push(`<details class="meta-block"><summary>⚙️ ${esc(head)} · ` +
+        `${it.text.length.toLocaleString()} chars · injected by a skill or the system, ` +
+        `not typed by you</summary><div class="card">${mdToHtml(it.text)}</div></details>`);
+      continue;
+    }
+    if (it.kind === 'doc') {
+      body.push(`<div class="msg doc"><div class="card">${mdToHtml(it.text)}</div></div>`);
+      continue;
+    }
+    if (it.kind === 'think') {
+      n.think++;
+      body.push('<details class="think"><summary>💭 Claude&#39;s reasoning · ' +
+        `${it.text.length.toLocaleString()} chars</summary>` +
+        `<div class="card">${mdToHtml(it.text)}</div></details>`);
+      continue;
+    }
+
+    seq++; n[it.kind]++;
+    const pics = it.pics || [];
+    n.img += pics.length;
+    const mid = 'm' + seq;
+    const cap = esc(it.text.split(/\s+/).join(' ').slice(0, 38) || '(image only)');
+    const shots = pics.length ? '<div class="shots">' + pics.map(u =>
+      `<img src="${esc(u)}" loading="lazy" data-msg="${mid}" data-num="#${seq}" data-cap="${cap}">`
+    ).join('') + '</div>' : '';
+    if (it.kind === 'user') toc.push(`<a href="#${mid}">#${seq} ${cap}</a>`);
+    MSG_TEXT.set(mid, it.text);
+    lastMid = mid; lastSeq = seq;
+    collectLinks(it.text, mid, seq);
+    body.push(`<div class="msg ${it.kind}" id="${mid}"><div class="who">` +
+      `<b>${it.kind === 'user' ? 'You' : 'Claude'}</b>` +
+      `<a class="num" href="#${mid}">#${seq}</a>${stamp}` +
+      `<button class="msgcopy" data-m="${mid}" title="Copy this message">⧉</button></div>` +
+      `<div class="card">${mdToHtml(it.text)}${shots}</div></div>`);
+  }
+  flushRun();
+
+  let filebar = '';
+  if (files.size) {
+    const top = [...files.entries()].sort((a, b) => b[1] - a[1]);
+    const lis = top.slice(0, 24).map(([f, c]) => `<li>${esc(f)} <b>×${c}</b></li>`).join('');
+    const more = top.length > 24 ? `(+${top.length - 24} more)` : '';
+    filebar = `<div class="filebar"><h3>📁 ${files.size} files touched in this session ` +
+      `${more}</h3><ul>${lis}</ul></div>`;
+  }
+
+  const box = (k, label, c, on) => !c ? '' :
+    `<label><input type="checkbox" data-k="${k}"${on ? ' checked' : ''}>` +
+    `${label} <span class="n">${c}</span></label>`;
+
+  $('#filters').innerHTML =
+    box('user', 'You', n.user, true) +
+    box('assistant', 'Claude', n.assistant, true) +
+    box('think', '💭 Reasoning', n.think, false) +
+    box('tool', '🔧 Tools', n.tool, false) +
+    box('meta', '⚙️ Injected', n.meta, false);
+
+  // Four facts earn a place on the strip; the rest sits behind ⓘ. A row of nine
+  // dot-separated values reads as one long string and nothing in it stands out.
+  const chip = (icon, text, title) => !text ? '' :
+    `<span class="chip"${title ? ` title="${esc(title)}"` : ''}>` +
+    `<b>${icon}</b>${esc(text)}</span>`;
+  const topTools = [...tools.entries()].sort((a, b) => b[1] - a[1]);
+  $('#stats').innerHTML =
+    chip('⑂', branch, 'git branch') +
+    chip('⏱', dur(durationMs) && `${dur(durationMs)} · ${turns} turns`, 'time spent') +
+    chip('💬', `${n.user} prompts · ${n.assistant} replies`) +
+    chip('🖼', n.img ? String(n.img) : '', 'screenshots') +
+    '<button class="chip more" id="statsbtn" title="More about this session">ⓘ</button>';
+  $('#statsmore').innerHTML = [
+    ['Branch', branch || 'unknown'],
+    ['Time', dur(durationMs) ? `${dur(durationMs)} over ${turns} turns` : 'not recorded'],
+    ['Messages', `${n.user} prompts · ${n.assistant} replies`],
+    ['Images', String(n.img)],
+    ['Tokens out', tokensOut.toLocaleString()],
+    ['Tools', topTools.map(([k, v]) => `${k}×${v}`).join(' · ') || 'none'],
+    ['Skills', skills.size ? [...skills].join(', ') : 'none'],
+    ['Subagent records', sidechain || '0'],
+    ['Source', srcName],
+  ].map(([k, v]) => `<div><span>${esc(k)}</span>${esc(String(v))}</div>`).join('');
+  $('#statsbtn').onclick = () => $('#statsmore').classList.toggle('open');
+
+  if (model.isDoc) {
+    $('#navtitle').textContent = 'Contents';
+    toc.length = 0;
+    HEADINGS.forEach(h => toc.push(
+      `<a href="#${h.id}" class="lvl${h.lvl}">${h.label}</a>`));
+  } else {
+    $('#navtitle').textContent = 'Your prompts';
+  }
+
+  document.title = title;
+  $('h1').textContent = title;
+  $('h1').title = subtitle ? `First prompt: ${subtitle}` : title;
+  $('#toc').innerHTML = toc.join('\n') || '<a>(none)</a>';
+  $('.chat').innerHTML = filebar + body.join('\n');
+  $('#mediabtn').textContent = '🖼 ' + n.img;
+  $('#mediabtn').hidden = !n.img;
+  $('#linkbtn').textContent = '🔗 ' + LINKS.length;
+  $('#linkbtn').hidden = !LINKS.length;
+  $('#linkhead').textContent = `🔗 ${LINKS.length} links cited in this session`;
+  $('#linklist').innerHTML = LINKS.map(l => {
+    let host = l.url;
+    try { host = new URL(l.url).host.replace(/^www\./, ''); } catch (e) { /* keep raw */ }
+    return `<div class="linkrow"><a href="${esc(l.url)}" rel="noreferrer" target="_blank">` +
+      `<b>${esc(l.label || host)}</b><span>${esc(l.url)}</span></a>` +
+      `<button data-m="${l.mid}" title="Jump to where it was cited">↩ #${l.seq}</button></div>`;
+  }).join('');
+  $('#mediahead').textContent =
+    `🖼 ${n.img} media items · click to enlarge, then jump back to its message`;
+  document.body.classList.add('loaded', 'hide-think', 'hide-tool', 'hide-meta');
+  document.body.classList.toggle('docmode', !!model.isDoc);
+  document.body.classList.remove('picking');
+  const showingEmbedded = EMBEDDED && srcName === EMBEDDED.srcName;
+  $('#homebtn').innerHTML = SESSIONS.length > 1
+    ? '←<span class="lbl"> All</span>'
+    : (EMBEDDED && !showingEmbedded
+        ? '↩<span class="lbl"> Back</span>'
+        : '⌂<span class="lbl"> Home</span>');
+  $('#homebtn').title = SESSIONS.length > 1 ? 'Back to the list'
+    : (EMBEDDED && !showingEmbedded
+        ? 'Back to this file\u2019s own transcript'
+        : (EMBEDDED ? 'This file\u2019s own transcript is already shown'
+                    : 'Back to the start, to open another transcript'));
+  $('#homebtn').disabled = !!(EMBEDDED && showingEmbedded && SESSIONS.length < 2);
+  return n;
+}
+
+// ───────────────────────── interaction ─────────────────────────
+
+let shots = [], idx = -1;
+// Message id -> the markdown the record actually held. Copying textContent would lose the
+// code fences, tables and emphasis, and duplicating the text into a data- attribute would
+// put every message in the file twice.
+const MSG_TEXT = new Map();
+const lb = () => $('#lb'), media = () => $('#media');
+
+function wire() {
+  // copy buttons on code blocks
+  $$('.copy').forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(b.parentNode.querySelector('code').textContent);
+    b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy', 1200);
+  });
+
+  // relative timestamps
+  const REL = [[31536e6, 'y'], [2592e6, 'mo'], [864e5, 'd'], [36e5, 'h'], [6e4, 'm']];
+  $$('[data-ts]').forEach(el => {
+    const d = new Date(el.dataset.ts);
+    if (isNaN(d)) return;
+    const diff = Date.now() - d;
+    let s = 'just now';
+    for (const [ms, u] of REL) if (diff >= ms) { s = Math.floor(diff / ms) + u + ' ago'; break; }
+    el.textContent = s; el.title = d.toLocaleString();
+  });
+
+  $$('.msgcopy').forEach(b => b.onclick = () => {
+    navigator.clipboard.writeText(MSG_TEXT.get(b.dataset.m) || '');
+    b.textContent = '✓'; b.classList.add('ok');
+    setTimeout(() => { b.textContent = '⧉'; b.classList.remove('ok'); }, 1200);
+  });
+
+  shots = $$('.shots img');
+  shots.forEach((im, i) => im.onclick = () => openLb(i));
+  $$('nav a').forEach(a => a.onclick = () => document.body.classList.remove('toc-open'));
+  $('#mediagrid').innerHTML = '';
+}
+
+function openLb(i) {
+  if (!shots.length) return;
+  idx = (i + shots.length) % shots.length;
+  const s = shots[idx];
+  $('#lbimg').src = s.src;
+  $('#lbcount').textContent = `${idx + 1} / ${shots.length}` +
+    (s.dataset.cap ? '   ·   ' + s.dataset.cap : '');
+  const g = $('#lbgoto');
+  g.dataset.target = s.dataset.msg || '';
+  g.textContent = '↩ Jump to message ' + (s.dataset.num || '');
+  lb().classList.add('open'); document.body.style.overflow = 'hidden';
+}
+function closeLb() {
+  lb().classList.remove('open'); $('#lbimg').removeAttribute('src');
+  if (media().classList.contains('open')) return;   // fall back to the media grid
+  document.body.style.overflow = '';
+  if (idx >= 0) shots[idx].scrollIntoView({ block: 'center' });
+}
+function openMedia() {
+  const grid = $('#mediagrid');
+  if (!grid.childElementCount)
+    shots.forEach((im, i) => {
+      const fig = document.createElement('figure');
+      const t = document.createElement('img');
+      t.src = im.src; t.loading = 'lazy';
+      const cap = document.createElement('figcaption');
+      cap.textContent = `${im.dataset.num || ''} ${im.dataset.cap || ''}`;
+      fig.append(t, cap);
+      fig.onclick = () => openLb(i);
+      grid.appendChild(fig);
+    });
+  media().classList.add('open'); document.body.style.overflow = 'hidden';
+}
+function closeMedia() { media().classList.remove('open'); document.body.style.overflow = ''; }
+
+function dataToBlob(uri) {
+  const [head, b64] = uri.split(',');
+  const mime = (head.match(/:(.*?);/) || [, 'image/png'])[1];
+  const bin = atob(b64), arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+async function toPng(blob) {
+  if (blob.type === 'image/png') return blob;
+  const bmp = await createImageBitmap(blob);
+  const c = document.createElement('canvas');
+  c.width = bmp.width; c.height = bmp.height;
+  c.getContext('2d').drawImage(bmp, 0, 0);
+  return new Promise(r => c.toBlob(r, 'image/png'));
+}
+
+// ── in-page search ──
+let hits = [], cur = -1;
+function clearHits() {
+  $$('mark').forEach(m => {
+    const p = m.parentNode;
+    p.replaceChild(document.createTextNode(m.textContent), m);
+    p.normalize();
+  });
+  hits = []; cur = -1;
+}
+function runSearch(q) {
+  clearHits();
+  const cnt = $('#cnt');
+  if (q.length < 2) { cnt.textContent = ''; return; }
+  const walker = document.createTreeWalker($('.layout'), NodeFilter.SHOW_TEXT, {
+    acceptNode: nd => (nd.parentNode.closest('nav,script,style,summary') || !nd.nodeValue.trim())
+      ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
+  });
+  const ql = q.toLowerCase(), targets = [];
+  let nd;
+  while ((nd = walker.nextNode())) if (nd.nodeValue.toLowerCase().includes(ql)) targets.push(nd);
+  targets.forEach(node => {
+    const frag = document.createDocumentFragment();
+    const text = node.nodeValue, lower = text.toLowerCase();
+    let i = 0, j;
+    while ((j = lower.indexOf(ql, i)) !== -1) {
+      frag.appendChild(document.createTextNode(text.slice(i, j)));
+      const m = document.createElement('mark');
+      m.textContent = text.slice(j, j + q.length);
+      frag.appendChild(m); hits.push(m); i = j + q.length;
+    }
+    frag.appendChild(document.createTextNode(text.slice(i)));
+    node.parentNode.replaceChild(frag, node);
+  });
+  cnt.textContent = hits.length ? '0 / ' + hits.length : 'no results';
+  if (hits.length) go(0);
+}
+function go(k) {
+  if (!hits.length) return;
+  hits.forEach(h => h.classList.remove('on'));
+  cur = (k + hits.length) % hits.length;
+  const m = hits[cur];
+  for (let d = m.closest('details'); d; d = d.parentElement.closest('details')) d.open = true;
+  // a hit can sit inside a category the filter bar has hidden — re-enable it
+  const hidden = m.closest('.think,.toolrun,.meta-block');
+  if (hidden && getComputedStyle(hidden).display === 'none') {
+    const key = hidden.classList.contains('think') ? 'think'
+      : hidden.classList.contains('toolrun') ? 'tool' : 'meta';
+    const cb = $(`.filters input[data-k=${key}]`);
+    if (cb) { cb.checked = true; cb.onchange(); }
+  }
+  m.classList.add('on');
+  m.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  $('#cnt').textContent = `${cur + 1} / ${hits.length}`;
+}
+
+function updatePill() {
+  const msgs = $$('.msg'), pill = $('#pill');
+  if (!msgs.length) return;
+  const mid = window.innerHeight * 0.35;
+  let k = 0;
+  for (let i = 0; i < msgs.length; i++) if (msgs[i].getBoundingClientRect().top < mid) k = i + 1;
+  pill.textContent = `${k || 1} / ${msgs.length}`;
+}
+
+// ───────────────────────── markdown ─────────────────────────
+
+/** The same model the page renders, written as markdown.
+ *
+ *  Markdown export lives here rather than in the Python side on purpose: one renderer means
+ *  the two can never disagree about what a transcript says. Tool runs collapse to a single
+ *  line each, since a wall of tool JSON is exactly what the reader came here to avoid, and
+ *  images are named rather than embedded because a base64 blob in a note is unreadable in
+ *  every editor that would open it.
+ */
+function toMarkdown(model, srcName) {
+  const { items, files, tools, tokensOut, title, branch, durationMs, turns } = model;
+  const out = [`# ${title}`, ''];
+  const head = [srcName, branch && `branch \`${branch}\``,
+    dur(durationMs) && `${dur(durationMs)} over ${turns} turns`,
+    `${tokensOut.toLocaleString()} output tokens`].filter(Boolean).join(' · ');
+  out.push(`> ${head}`, '');
+
+  if (files.size) {
+    out.push(`## Files touched (${files.size})`, '');
+    [...files.entries()].sort((a, b) => b[1] - a[1])
+      .forEach(([f, c]) => out.push(`- \`${f}\` ×${c}`));
+    out.push('');
+  }
+
+  let seq = 0, run = [];
+  const flush = () => {
+    if (!run.length) return;
+    const k = new Map();
+    run.forEach(n => k.set(n, (k.get(n) || 0) + 1));
+    out.push(`> 🔧 ${run.length} tool actions: ` +
+      [...k.entries()].sort((a, b) => b[1] - a[1])
+        .map(([n, c]) => c > 1 ? `${n}×${c}` : n).join(', '), '');
+    run.length = 0;
+  };
+
+  for (const it of items) {
+    if (it.kind === 'tool') { run.push(it.name); continue; }
+    flush();
+    if (it.kind === 'meta' || it.kind === 'think') continue;
+    seq++;
+    const when = it.ts ? new Date(it.ts).toLocaleString() : '';
+    out.push(`## ${it.kind === 'user' ? 'You' : 'Claude'} · #${seq}${when ? ' · ' + when : ''}`,
+      '', it.text, '');
+    const pics = (it.pics || []).length;
+    if (pics) out.push(`*(${pics} image${pics > 1 ? 's' : ''} in the HTML version)*`, '');
+  }
+  flush();
+  return out.join('\n');
+}
+
+// ───────────────────────── export ─────────────────────────
+
+function exportHtml(records, name) {
+  // Same inert-JSON shape the CLI writes, so an exported file and a converted one are
+  // byte-identical in structure and pass the same CSP.
+  const payload = JSON.stringify({ records, src: name }).replace(/</g, '\\u003c');
+  const inject = '<script type="application/json" id="transcript-data">' +
+    payload + '<\/script>\n</head>';
+  const html = SHELL.replace('</head>', inject);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+  a.download = name.replace(/\.jsonl$/, '') + '.html';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+// ───────────────────────── boot ─────────────────────────
+
+let CURRENT = null, SESSIONS = [], EMBEDDED = null;
+
+const relTime = iso => {
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  const REL2 = [[31536e6, 'y'], [2592e6, 'mo'], [864e5, 'd'], [36e5, 'h'], [6e4, 'm']];
+  const diff = Date.now() - d;
+  for (const [ms, u] of REL2) if (diff >= ms) return Math.floor(diff / ms) + u + ' ago';
+  return 'just now';
+};
+
+function showPicker() {
+  const rows = SESSIONS.map((s, i) => {
+    const m = s.model;
+    const when = (m.items.find(x => x.ts) || {}).ts || '';
+    const bits = [m.branch && '⑂ ' + m.branch,
+                  m.items.filter(x => x.kind === 'user').length + ' prompts',
+                  m.items.filter(x => x.kind === 'tool').length + ' tools',
+                  relTime(when)].filter(Boolean).join(' · ');
+    return `<button class="srow" data-i="${i}">
+      <span class="t">${esc(m.title)}</span>
+      <span class="m">${esc(bits)}</span>
+      <span class="f">${esc(s.name)}</span></button>`;
+  }).join('');
+  $('#picker').innerHTML =
+    `<h2>${SESSIONS.length} transcripts loaded</h2><div class="rows">${rows}</div>`;
+  $$('#picker .srow').forEach(b => b.onclick = () => {
+    const s = SESSIONS[+b.dataset.i];
+    document.body.classList.remove('picking');
+    load(s.records, s.name);
+  });
+  // The picker is not a transcript, so nothing from the last one may survive into it.
+  // Leaving the old title and chips in place was the whole reason this screen read as broken.
+  CURRENT = null;
+  $('h1').textContent = 'Claude Transcript Viewer';
+  $('h1').removeAttribute('title');
+  $('#filters').innerHTML = '';
+  $('#stats').innerHTML = '';
+  $('#statsmore').innerHTML = '';
+  $('#statsmore').classList.remove('open');
+  document.title = `${SESSIONS.length} transcripts`;
+  $('#homebtn').innerHTML = '⌂<span class="lbl"> Home</span>';
+  $('#homebtn').title = 'Back to the start, to open different files';
+  document.body.classList.add('picking');
+  document.body.classList.remove('loaded');
+}
+
+function load(records, srcName) {
+  CURRENT = { records, srcName };
+  const model = parseRecords(records);
+  render(model, srcName);
+  wire();
+  updatePill();
+  jumpToHash();
+}
+
+/** The browser resolves #m7 while parsing, when the messages do not exist yet, so a
+ *  permalink opened cold lands at the top of the page. Re-run it once there is something
+ *  to land on. */
+function jumpToHash() {
+  if (!location.hash) return;
+  const el = document.getElementById(location.hash.slice(1));
+  if (!el) return;
+  requestAnimationFrame(() => {
+    el.scrollIntoView({ block: 'center' });
+    el.classList.add('flash');
+    setTimeout(() => el.classList.remove('flash'), 1800);
+  });
+}
+
+function bootStatic() {
+  const drop = $('#drop'), zone = $('#drop .zone'), file = $('#fileinput'), err = $('#droperr');
+
+  const isDoc = n => /\.(md|markdown|txt)$/i.test(n);
+  const readOne = f => new Promise(res => {
+    const r = new FileReader();
+    r.onload = () => res(isDoc(f.name)
+      ? { name: f.name, doc: r.result }
+      : { name: f.name, records: parseJsonl(r.result) });
+    r.onerror = () => res({ name: f.name, records: [] });
+    r.readAsText(f);
+  });
+
+  // Bulk import: dropping a folder or a multi-select lands you on a picker instead of an
+  // arbitrary one of them. Files are parsed once and kept in memory, so switching between
+  // sessions is instant and nothing is re-read.
+  const readFiles = async list => {
+    err.textContent = '';
+    const files = [...list].filter(f =>
+      /\.(jsonl?|md|markdown|txt)$/i.test(f.name) || f.type === '');
+    if (!files.length) { err.textContent = 'Drop a .jsonl transcript, or a .md file.'; return; }
+    if (files.length > 1) err.textContent = `Reading ${files.length} files…`;
+    const read = await Promise.all(files.map(readOne));
+    const docs = read.filter(x => x.doc && x.doc.trim());
+    if (docs.length && !read.some(x => x.records && x.records.length)) {
+      const d = docs[0];
+      CURRENT = null;
+      render(markdownModel(d.doc, d.name), d.name);
+      wire(); updatePill();
+      if (docs.length > 1) err.textContent = '';
+      return;
+    }
+    const loaded = read.filter(x => x.records && x.records.length);
+    err.textContent = '';
+    if (!loaded.length) {
+      err.textContent = 'No readable JSON lines. Are these Claude Code .jsonl transcripts?';
+      return;
+    }
+    if (loaded.length === 1) { load(loaded[0].records, loaded[0].name); return; }
+    SESSIONS = loaded.map(x => ({ ...x, model: parseRecords(x.records) }));
+    showPicker();
+  };
+  const readFile = f => readFiles([f]);
+
+  const cp = $('#copypath');
+  if (cp) cp.onclick = () => {
+    navigator.clipboard.writeText('~/.claude/projects').then(() => {
+      const was = cp.textContent;
+      cp.textContent = 'copied — now press ⌘⇧G and paste';
+      setTimeout(() => cp.textContent = was, 2400);
+    });
+  };
+  zone.onclick = () => file.click();
+  file.onchange = () => file.files.length && readFiles(file.files);
+  ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => {
+    e.preventDefault(); drop.classList.add('over');
+  }));
+  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => {
+    e.preventDefault(); drop.classList.remove('over');
+  }));
+  drop.addEventListener('drop', e => e.dataTransfer.files.length && readFiles(e.dataTransfer.files));
+  // dropping anywhere on the page works too, once one is already loaded
+  document.addEventListener('dragover', e => e.preventDefault());
+  document.addEventListener('drop', e => {
+    e.preventDefault();
+    if (e.dataTransfer.files.length) readFiles(e.dataTransfer.files);
+  });
+
+  // ── static handlers (bound once; they read live state) ──
+  const box = $('#q');
+  let timer;
+  box.oninput = () => { clearTimeout(timer); timer = setTimeout(() => runSearch(box.value), 200); };
+  box.onkeydown = e => {
+    if (e.key === 'Enter') { e.preventDefault(); go(e.shiftKey ? cur - 1 : cur + 1); }
+  };
+  $('#prev').onclick = () => go(cur - 1);
+  $('#next').onclick = () => go(cur + 1);
+
+  $('#filters').addEventListener('change', e => {
+    const cb = e.target.closest('input[data-k]');
+    if (cb) document.body.classList.toggle('hide-' + cb.dataset.k, !cb.checked);
+  });
+  // keep the programmatic path in runSearch working
+  $('#filters').addEventListener('click', e => {
+    const cb = e.target.closest('input[data-k]');
+    if (cb && !cb.onchange) cb.onchange = () =>
+      document.body.classList.toggle('hide-' + cb.dataset.k, !cb.checked);
+  });
+
+  $('#mediabtn').onclick = openMedia;
+  $('#mediaclose').onclick = closeMedia;
+
+  const links = $('#links');
+  const closeLinks = () => {
+    links.classList.remove('open');
+    document.body.style.overflow = '';
+  };
+  $('#linkbtn').onclick = () => {
+    links.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+  $('#linkclose').onclick = closeLinks;
+  links.onclick = e => {
+    if (e.target === links) { closeLinks(); return; }
+    const jump = e.target.closest('#linklist button');
+    if (!jump) return;
+    closeLinks();
+    const el = document.getElementById(jump.dataset.m);
+    if (!el) return;
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    el.classList.add('flash');
+    setTimeout(() => el.classList.remove('flash'), 1800);
+  };
+  media().onclick = e => { if (e.target === media()) closeMedia(); };
+  $('#dlall').onclick = () => shots.forEach((im, i) => setTimeout(() => {
+    const a = document.createElement('a');
+    a.href = im.src;
+    a.download = (CURRENT ? CURRENT.srcName.replace(/\.jsonl$/, '') : 'image') +
+      '-' + String(i + 1).padStart(2, '0') +
+      (im.src.startsWith('data:image/jpeg') ? '.jpg' : '.png');
+    a.click();
+  }, i * 320));
+
+  $('#lbprev').onclick = e => { e.stopPropagation(); openLb(idx - 1); };
+  $('#lbnext').onclick = e => { e.stopPropagation(); openLb(idx + 1); };
+  $('#lbclose').onclick = e => { e.stopPropagation(); closeLb(); };
+  lb().onclick = closeLb;
+  $('#lbimg').onclick = e => e.stopPropagation();
+  $('#lbgoto').onclick = e => {
+    e.stopPropagation();
+    const t = $('#lbgoto').dataset.target;
+    lb().classList.remove('open'); $('#lbimg').removeAttribute('src');
+    closeMedia();
+    const el = t && document.getElementById(t);
+    if (el) {
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el.classList.add('flash');
+      setTimeout(() => el.classList.remove('flash'), 1800);
+    }
+  };
+  const copyBtn = $('#lbcopy');
+  copyBtn.onclick = async e => {
+    e.stopPropagation();
+    const label = copyBtn.textContent;
+    try {
+      const png = await toPng(dataToBlob($('#lbimg').src));
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
+      copyBtn.textContent = '✓ Copied — paste into images.google.com';
+    } catch {
+      copyBtn.textContent = '✕ Blocked — right-click the image instead';
+    }
+    setTimeout(() => copyBtn.textContent = label, 2600);
+  };
+
+  // One Export button that asks which format, rather than one button per format. It names
+  // the shared idea, keeps the header short, and gives the print-to-PDF path somewhere to
+  // live: nobody was going to discover Cmd+P from a line in the README.
+  const closeExport = () => document.body.classList.remove('export-open');
+  $('#exportbtn').onclick = e => {
+    e.stopPropagation();
+    closeMenu();
+    document.body.classList.toggle('export-open');
+  };
+  $('#exp-html').onclick = () => {
+    closeExport();
+    if (CURRENT) exportHtml(CURRENT.records, CURRENT.srcName);
+  };
+  $('#exp-pdf').onclick = () => { closeExport(); setTimeout(() => window.print(), 80); };
+  $('#exp-md').onclick = () => {
+    closeExport();
+    if (!CURRENT) return;
+    const md = toMarkdown(parseRecords(CURRENT.records), CURRENT.srcName);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([md], { type: 'text/markdown' }));
+    a.download = CURRENT.srcName.replace(/\.jsonl$/, '') + '.md';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  };
+  // One way back, always present once something is loaded: to the picker when several
+  // transcripts are in memory, otherwise to the drop zone so another file can be opened.
+  // Clicking the title goes back too. It is what a site logo does, and it means the one
+  // way out of a transcript is findable without hunting for a button.
+  $('h1').onclick = () => { if (document.body.classList.contains('loaded')) goHome(); };
+
+  const goHome = () => {
+    // From a transcript with siblings, back means the list. From the list itself, back
+    // means the drop zone, or the button would do nothing.
+    if (SESSIONS.length > 1 && !document.body.classList.contains('picking')) {
+      showPicker(); return;
+    }
+    // In a converted file, back means this file's own transcript, which is what a reload
+    // gives you. Only a page with nothing embedded returns to an empty drop zone.
+    if (EMBEDDED && !(CURRENT && CURRENT.srcName === EMBEDDED.srcName)) {
+      SESSIONS = [];
+      document.body.classList.remove('picking');
+      load(EMBEDDED.records, EMBEDDED.srcName);
+      scrollTo({ top: 0 });
+      return;
+    }
+    CURRENT = null; SESSIONS = []; shots = []; idx = -1;
+    clearHits();
+    $('#q').value = ''; $('#cnt').textContent = '';
+    $('.chat').innerHTML = ''; $('#toc').innerHTML = '';
+    $('#filters').innerHTML = ''; $('#stats').innerHTML = '';
+    $('#statsmore').innerHTML = ''; $('#statsmore').classList.remove('open');
+    $('#mediagrid').innerHTML = '';
+    document.body.className = '';
+    document.title = 'Claude Transcript Viewer';
+    $('h1').textContent = 'Claude Transcript Viewer';
+    $('#homebtn').innerHTML = '⌂<span class="lbl"> Home</span>';
+    $('#droperr').textContent = '';
+    scrollTo({ top: 0 });
+  };
+  $('#homebtn').onclick = goHome;
+  const closeToc = () => document.body.classList.remove('toc-open');
+  // Priority+: past five controls the row stops fitting, so the secondary ones live in an
+  // overflow menu on anything short of a wide window and inline above it.
+  const closeMenu = () => document.body.classList.remove('menu-open');
+  $('#morebtn').onclick = e => { e.stopPropagation(); document.body.classList.toggle('menu-open'); };
+  $('#actionmenu').addEventListener('click', () => setTimeout(closeMenu, 0));
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.actions')) { closeMenu(); closeExport(); }
+  });
+
+  $('#tocbtn').onclick = () => document.body.classList.toggle('toc-open');
+  $('#tocclose').onclick = closeToc;
+  // Tapping the empty area of the panel closes it too, which is what a full-screen sheet
+  // is expected to do on a phone where there is no Esc key.
+  $('nav').onclick = e => { if (e.target.closest('a, button')) return; closeToc(); };
+  $('#pill').onclick = () => scrollTo({ top: 0, behavior: 'smooth' });
+
+  // swipe between images
+  let tx = 0, ty = 0;
+  lb().addEventListener('touchstart', e => {
+    tx = e.touches[0].clientX; ty = e.touches[0].clientY;
+  }, { passive: true });
+  lb().addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.6) openLb(idx + (dx < 0 ? 1 : -1));
+  }, { passive: true });
+
+  let ticking = false;
+  addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => { updatePill(); ticking = false; });
+  });
+
+  document.onkeydown = e => {
+    if (lb().classList.contains('open')) {
+      if (['Escape', 'Enter', ' '].includes(e.key)) { e.preventDefault(); closeLb(); }
+      if (e.key === 'ArrowLeft') openLb(idx - 1);
+      if (e.key === 'ArrowRight') openLb(idx + 1);
+      return;
+    }
+    if (media().classList.contains('open')) { if (e.key === 'Escape') closeMedia(); return; }
+    if (links.classList.contains('open')) {
+      if (e.key === 'Escape') closeLinks();
+      return;
+    }
+    if (e.key === '/' && document.activeElement !== box) { e.preventDefault(); box.focus(); }
+    if (e.key === 'Escape') {
+      box.blur();
+      document.body.classList.remove('toc-open', 'menu-open', 'export-open');
+    }
+  };
+}
+
+bootStatic();
+// The transcript is injected as an inert <script type="application/json">, never as code.
+// A JSON block is not executed by the browser, so a hostile file cannot break out of it,
+// and the page keeps exactly one executable script whose CSP hash is fixed at build time.
+const DATA = document.getElementById('transcript-data');
+if (DATA && DATA.textContent.trim()) {
+  try {
+    const payload = JSON.parse(DATA.textContent);
+    // A converted file has a transcript of its own. Reloading returns to it, so Home has
+    // to mean the same thing, or the two ways of starting over disagree.
+    EMBEDDED = { records: payload.records, srcName: payload.src || 'transcript' };
+    load(EMBEDDED.records, EMBEDDED.srcName);
+  } catch (e) {
+    document.getElementById('droperr').textContent = 'Embedded transcript is unreadable.';
+  }
+}
+})();
+</script>
+</body>
+</html>
