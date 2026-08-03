@@ -23,7 +23,8 @@ python3 tools/lint.py
 It checks three things review will not:
 
 1. **`viewer.html` matches `src/`.** It is a build artifact that is also the product, so editing
-   `src/` without running `--build` ships a page that silently lags its source.
+   `src/` without running `--build` ships a page that silently lags its source, and without
+   `--demo-page` the published demo keeps showing an older build.
 2. **Nothing from a real machine.** Home directory paths, stray transcripts, generated HTML that
    `.gitignore` does not cover.
 3. **Sentences leaning on punctuation instead of structure.** Em-dashes fail, prose semicolons

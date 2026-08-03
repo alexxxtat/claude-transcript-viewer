@@ -9,7 +9,13 @@
 ![dependencies none](https://img.shields.io/badge/dependencies-none-brightgreen)
 ![network none](https://img.shields.io/badge/network-none-brightgreen)
 
-![转出来的 session](docs/screenshot-main.png)
+### [▶ 打开在线试玩页](https://alexxxtat.github.io/claude-transcript-viewer/)
+
+[![转出来的 session](docs/screenshot-main.png)](https://alexxxtat.github.io/claude-transcript-viewer/)
+
+一份虚构的 session，已经载好，什么都不用装。那一页跟下面要下载的是同一个文件，所以就算你把
+自己的记录拖上去，一样是在浏览器里解析、不会被上传。但真正的记录还是建议用下载版：那份你可以
+自己读、自己留着、关掉 Wi-Fi 照跑，比相信一个明天可能被改掉的网页更硬。
 
 Claude Code 会把每一次 session 完整写成 JSONL，存在 `~/.claude/projects/` 下面。那是一份完整的
 记录：你输入的每一句话、每一条回复、每一次工具调用、每一张你粘贴过的截图。它同时也完全没法读。一个
@@ -44,6 +50,7 @@ python3 claude_transcript_viewer.py --find "定价"      # 搜索全部记录
 python3 claude_transcript_viewer.py --find "定价" 3    # 打开第 3 个命中
 python3 claude_transcript_viewer.py --agents   # 列表中一并列出 subagent 记录
 python3 claude_transcript_viewer.py --build    # 从 src/ 重新生成 viewer.html
+python3 claude_transcript_viewer.py --demo-page  # 重新生成在线试玩页
 ```
 
 CLI 补上浏览器沙箱禁止的事。它会跨所有项目找出你的 session，也会把记录里只用路径引用的截图真正嵌
@@ -129,6 +136,7 @@ src/
   viewer.template.html          外壳标记
   viewer.css                    样式
   viewer.js                     ← 解析与渲染只住在这里，只有一份
+docs/index.html                 在线试玩页（生成后 commit，由 Pages 供应）
 ```
 
 `viewer.js` 是唯一的实现。两个入口喂给它同样的记录：拖放页在浏览器里解析 `.jsonl`，CLI 则把

@@ -9,8 +9,14 @@ Turn a Claude Code session into a single HTML file you can actually read.
 ![dependencies none](https://img.shields.io/badge/dependencies-none-brightgreen)
 ![network none](https://img.shields.io/badge/network-none-brightgreen)
 
-![The viewer showing a converted session](docs/screenshot-main.png)
+### [▶ Open the live demo](https://alexxxtat.github.io/claude-transcript-viewer/)
 
+[![The viewer showing a converted session](docs/screenshot-main.png)](https://alexxxtat.github.io/claude-transcript-viewer/)
+
+A fictional session, already loaded, nothing to install. That page is the same file as the
+download below, so your own transcripts would still be parsed in the browser and never uploaded.
+For real ones prefer the download anyway: it is the copy you can read, keep, and run with Wi-Fi
+off, which is a stronger guarantee than trusting a page that could change tomorrow.
 
 Claude Code keeps every session on disk as JSONL under `~/.claude/projects/`. It is a complete
 record: every prompt, every reply, every tool call, every screenshot you pasted. It is also
@@ -49,6 +55,7 @@ python3 claude_transcript_viewer.py --find "rate limit"    # search every transc
 python3 claude_transcript_viewer.py --find "rate limit" 3  # open the 3rd hit
 python3 claude_transcript_viewer.py --agents   # include subagent transcripts in the listing
 python3 claude_transcript_viewer.py --build    # rebuild viewer.html from src/
+python3 claude_transcript_viewer.py --demo-page  # rebuild the published demo page
 ```
 
 The CLI adds what the browser sandbox forbids. It finds your sessions across every project, and it
@@ -138,6 +145,7 @@ src/
   viewer.template.html          shell markup
   viewer.css                    styles
   viewer.js                     ← parsing and rendering live here, once
+docs/index.html                 the live demo (built, committed, served by Pages)
 ```
 
 `viewer.js` is the only implementation. Both entry points hand it the same records: the drop target

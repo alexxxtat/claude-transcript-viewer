@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-fDBk0RdX624/a15JCiCfGxXR7bukV5PlrrGj192JU7g='; style-src 'sha256-gERb9F1RwxHIHkycJ4Jgy6R4kg+lZbhQGDEo7uXMnDs='; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-fDBk0RdX624/a15JCiCfGxXR7bukV5PlrrGj192JU7g='; style-src 'sha256-X/6foYdarpfvHBrgYqCIQnM5rdSfvqJcABEfZ0/o0U0='; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Claude Transcript Viewer</title>
 <style>:root{color-scheme:light dark;
  --bg:#f6f6f7;--surface:#fff;--text:#1c1c1e;--muted:#71717a;--border:#e4e4e7;
@@ -19,6 +19,15 @@
 body{margin:0;background:var(--bg);color:var(--text);
  font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC",Helvetica,sans-serif}
 a{color:var(--accent)}
+/* Only the hosted demo page carries this bar; --demo-page injects the markup. It sits above
+   the sticky header on purpose, so it scrolls away once you are reading. */
+.demobar{display:flex;gap:10px 18px;align-items:baseline;flex-wrap:wrap;
+ padding:9px 18px;background:var(--user-bg);border-bottom:1px solid var(--user-edge);
+ font-size:13px;line-height:1.55}
+.demobar b{font-weight:650}
+.demobar span{color:var(--muted);flex:1;min-width:220px}
+.demobar a{white-space:nowrap;font-weight:550}
+@media(max-width:560px){.demobar{padding:8px 12px;font-size:12.5px}}
 header{position:sticky;top:0;z-index:30;padding:9px 18px 7px;
  background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(14px);
  border-bottom:1px solid var(--border)}
@@ -402,7 +411,7 @@ pre code{overflow-wrap:normal}
    headers repeat on every page, dark backgrounds waste ink, and collapsed sections
    print as their summary line unless opened. */
 @media print{
- header,nav,#pill,#lb,#media,#drop,.msgcopy,.copy,.actions{display:none!important}
+ header,nav,#pill,#lb,#media,#drop,.msgcopy,.copy,.actions,.demobar{display:none!important}
  body{background:#fff;color:#000}
  .layout{display:block;max-width:none}
  .chat{padding:0}

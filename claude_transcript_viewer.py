@@ -310,6 +310,41 @@ def convert(path, out_dir):
     return out
 
 
+REPO_URL = "https://github.com/alexxxtat/claude-transcript-viewer"
+DEMO_BAR = (
+    '<div class="demobar">'
+    '<b>Live demo</b>'
+    '<span>A fictional session, safe to click around. Drop a <code>.jsonl</code> of your own and '
+    'it is parsed here in the page, never uploaded &mdash; but for real transcripts prefer the '
+    'downloaded file, which you can verify by reading it and running it with Wi-Fi off.</span>'
+    f'<a href="{REPO_URL}/raw/main/viewer.html" download>&#8595; Download viewer.html</a>'
+    f'<a href="{REPO_URL}">Source</a>'
+    '</div>\n'
+)
+
+
+def demo_page():
+    """Rebuild docs/index.html: the shell, the fictional session, and a banner.
+
+    This is a third artifact generated from src/, which is a third place that can silently
+    fall behind it. tools/lint.py fails when it does; without that check the published page
+    would keep demonstrating whatever the code looked like the last time someone remembered.
+    """
+    build_shell()
+    records, _ = prepare(HERE / "demo" / "sample-session.jsonl")
+    payload = json.dumps({"records": records, "src": "sample-session"},
+                         ensure_ascii=False).replace("<", "\\u003c")
+    page = SHELL.read_text().replace(
+        "</head>",
+        f'<script type="application/json" id="transcript-data">{payload}</script>\n</head>', 1)
+    page = page.replace("<body>", f"<body>\n{DEMO_BAR}", 1)
+
+    out = HERE / "docs" / "index.html"
+    out.write_text(page)
+    print(f"✅ docs/index.html rebuilt ({out.stat().st_size/1_048_576:.1f}MB · "
+          f"{len(records)} records) — GitHub Pages serves this from /docs")
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     agents = "--agents" in args
@@ -317,6 +352,8 @@ if __name__ == "__main__":
 
     if args and args[0] in ("--build", "-b"):
         build_shell()
+    elif args and args[0] == "--demo-page":
+        demo_page()
     elif args and args[0] in ("--find", "-f"):
         if len(args) < 2:
             sys.exit('Usage: --find "<query>" [number] [out_dir]')

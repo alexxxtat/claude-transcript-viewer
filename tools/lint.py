@@ -60,6 +60,26 @@ else:
     if "Content-Security-Policy" not in shell:
         fail("build", "viewer.html has no CSP meta tag")
 
+# ── 1a. the published demo page must match its source too ───────────────────
+# docs/index.html is the third artifact generated from src/, and the only one strangers see
+# first. Nothing about editing src/ would otherwise reveal that the live page still shows an
+# older build, because it keeps working perfectly while being wrong.
+demo_page = ROOT / "docs" / "index.html"
+if not demo_page.exists():
+    fail("build", "docs/index.html is missing; run --demo-page")
+else:
+    page = demo_page.read_text()
+    for name in ("viewer.css", "viewer.js"):
+        if (ROOT / "src" / name).read_text() not in page:
+            fail("build", f"docs/index.html does not contain the current src/{name}. "
+                          "Run: python3 claude_transcript_viewer.py --demo-page")
+    if 'id="transcript-data"' not in page:
+        fail("build", "docs/index.html has no embedded transcript; it would open on the "
+                      "drop zone instead of demonstrating anything")
+    if 'class="demobar"' not in page:
+        fail("build", "docs/index.html is missing the demo banner that tells visitors this "
+                      "is a fictional session and points them at the downloadable file")
+
 # ── 1b. every control in the template must actually be wired ────────────────
 # Three separate bugs shipped past review this way: the markup was right, the element
 # rendered, and the click did nothing because a string replacement had quietly missed its

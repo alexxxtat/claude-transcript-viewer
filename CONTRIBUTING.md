@@ -22,6 +22,7 @@ After editing anything in `src/`, rebuild the committed shell:
 
 ```bash
 python3 claude_transcript_viewer.py --build
+python3 claude_transcript_viewer.py --demo-page
 ```
 
 ## What `tools/lint.py` enforces
@@ -30,7 +31,8 @@ CI runs it, so it is worth knowing before it turns your pull request red. Three 
 are ordinary hygiene and three are project conventions you would not guess:
 
 - **`viewer.html` must match `src/`.** It is a build artifact that is also the product, so run
-  `--build` after editing `src/` or the page people download lags its source.
+  `--build` and `--demo-page` after editing `src/`, or the page people download and the page
+  they arrive at both lag the source. CI fails on either.
 - **Nothing from a real machine.** Home directory paths, stray transcripts, generated HTML.
 - **Links and images in the docs must resolve.**
 - **Every control in the template needs a handler in `viewer.js`.** Markup that renders and does

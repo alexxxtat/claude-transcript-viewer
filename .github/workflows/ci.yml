@@ -34,3 +34,10 @@ jobs:
         run: |
           python3 claude_transcript_viewer.py --build
           git diff --exit-code -- viewer.html
+
+      - name: The published demo page must be reproducible too
+        # docs/index.html is what GitHub Pages serves, so a stale one misrepresents the project
+        # to everyone who arrives by link rather than by clone.
+        run: |
+          python3 claude_transcript_viewer.py --demo-page
+          git diff --exit-code -- docs/index.html

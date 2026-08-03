@@ -9,7 +9,13 @@
 ![dependencies none](https://img.shields.io/badge/dependencies-none-brightgreen)
 ![network none](https://img.shields.io/badge/network-none-brightgreen)
 
-![轉出來的 session](docs/screenshot-main.png)
+### [▶ 打開線上試玩頁](https://alexxxtat.github.io/claude-transcript-viewer/)
+
+[![轉出來的 session](docs/screenshot-main.png)](https://alexxxtat.github.io/claude-transcript-viewer/)
+
+一份虛構的 session，已經載好，什麼都不用裝。那一頁跟底下要下載的是同一個檔案，所以就算你把
+自己的紀錄拖上去，一樣是在瀏覽器裡解析、不會被上傳。但真正的紀錄還是建議用下載版：那份你可以
+自己讀、自己留著、關掉 Wi-Fi 照跑，比相信一個明天可能被改掉的網頁更硬。
 
 Claude Code 會把每一次 session 完整寫成 JSONL，存在 `~/.claude/projects/` 底下。那是一份完整的
 紀錄：你打的每一句話、每一則回覆、每一次工具呼叫、每一張你貼過的截圖。它同時也完全不能讀。一個
@@ -44,6 +50,7 @@ python3 claude_transcript_viewer.py --find "定價"      # 搜尋全部逐字稿
 python3 claude_transcript_viewer.py --find "定價" 3    # 開啟第 3 個命中
 python3 claude_transcript_viewer.py --agents   # 清單中一併列出 subagent 逐字稿
 python3 claude_transcript_viewer.py --build    # 從 src/ 重新產生 viewer.html
+python3 claude_transcript_viewer.py --demo-page  # 重新產生線上試玩頁
 ```
 
 CLI 補上瀏覽器沙盒禁止的事。它會跨所有專案找出你的 session，也會把逐字稿裡只用路徑指涉的截圖真的
@@ -129,6 +136,7 @@ src/
   viewer.template.html          外殼標記
   viewer.css                    樣式
   viewer.js                     ← 解析與渲染只住在這裡，只有一份
+docs/index.html                 線上試玩頁（產生後 commit，由 Pages 供應）
 ```
 
 `viewer.js` 是唯一的實作。兩個入口餵給它同樣的紀錄：拖放頁在瀏覽器裡解析 `.jsonl`，CLI 則把
