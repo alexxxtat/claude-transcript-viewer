@@ -74,6 +74,15 @@ python3 tools/lint.py               # build sync, privacy, voice, wiring, string
 python3 demo/test_hardening.py      # untrusted-input probes, needs Chrome
 python3 demo/test_navigation.py     # no navigable dead ends, needs Chrome
 python3 demo/test_i18n.py           # every language reaches every path, needs Chrome
+```
+
+Both of those drive `docs/index.html` for most cases and `viewer.html` for one. The published
+page always opens on an embedded transcript, so the drop zone is a screen only the downloaded
+file shows, and it went untested for a while on the reasoning that the two artifacts are built
+from the same source. They are, and the reproducible-build check proves it, but that proves the
+code is identical and not that both entry states work.
+
+```bash
 python3 demo/make_demo.py           # rebuild the demo transcript, needs Pillow
 python3 claude_transcript_viewer.py demo/sample-session.jsonl demo
 python3 demo/shoot.py               # refresh docs/screenshot-*.png if the UI moved

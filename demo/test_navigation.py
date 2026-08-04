@@ -37,7 +37,7 @@ def inject(page, js):
     return page.replace("</body>", f"<script>{setup}</script>\n</body>")
 
 
-def dom_after(js):
+def dom_after(js, src="docs/index.html"):
     """One Chrome per case, each in its own throwaway profile.
 
     Reusing a --user-data-dir across sequential runs deadlocks: the first instance holds the
@@ -46,7 +46,7 @@ def dom_after(js):
     """
     with tempfile.TemporaryDirectory() as tmp:
         page = Path(tmp) / "probe.html"
-        page.write_text(inject((ROOT / "docs" / "index.html").read_text(), js))
+        page.write_text(inject((ROOT / src).read_text(), js))
         return subprocess.run(
             browser.argv(CHROME, page.as_uri()),
             capture_output=True, text=True, timeout=90).stdout
@@ -70,15 +70,21 @@ def main():
     failures = 0
     cases = [
         ("the demo page opens on its transcript, not the drop zone",
-         "", lambda s: s["loaded"]),
+         "docs/index.html", "", lambda s: s["loaded"]),
         ("clicking the title cannot empty a page whose Home is disabled",
-         "document.querySelector('h1').click()", lambda s: s["loaded"]),
+         "docs/index.html", "document.querySelector('h1').click()", lambda s: s["loaded"]),
         ("no dead end: any view showing the drop zone has a live Home button",
-         "document.querySelector('h1').click()",
+         "docs/index.html", "document.querySelector('h1').click()",
          lambda s: s["loaded"] or not s["home_disabled"]),
+        # viewer.html is the file people actually download, and it is the only artifact that
+        # opens on the drop zone: docs/index.html always has a transcript embedded, so every
+        # case above enters through a screen this one never sees. The reproducible-build check
+        # proves the two carry identical code, not that both entry states work.
+        ("the downloaded viewer opens on the drop zone, with a live Home button",
+         "viewer.html", "", lambda s: not s["loaded"] and not s["home_disabled"]),
     ]
-    for name, js, ok in cases:
-        s = state(dom_after(js))
+    for name, src, js, ok in cases:
+        s = state(dom_after(js, src))
         if ok(s):
             print(f"✅ {name}")
         else:

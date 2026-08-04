@@ -67,14 +67,14 @@ def inject(page, js):
     return page.replace("</body>", f"<script>{setup}</script>\n</body>")
 
 
-def probe_after(js):
+def probe_after(js, src="docs/index.html"):
     """Drive the page, then read the values back out of a body data attribute.
 
     One Chrome per case, each in its own throwaway profile (see test_navigation.py).
     """
     with tempfile.TemporaryDirectory() as tmp:
         page = Path(tmp) / "probe.html"
-        page.write_text(inject((ROOT / "docs" / "index.html").read_text(), js + ";" + READ))
+        page.write_text(inject((ROOT / src).read_text(), js + ";" + READ))
         dom = subprocess.run(
             browser.argv(CHROME, page.as_uri()),
             capture_output=True, text=True, timeout=90).stdout
@@ -137,7 +137,17 @@ def main():
                       "線上示範" in p["demobar"],
                       f"still {p['demobar'][:40]!r}")
 
-    # 5. Switching back is not a one-way door.
+    # 5. The drop zone, which is reachable only in the downloaded viewer.html. Every case
+    #    above enters through docs/index.html, and that page always opens on its embedded
+    #    transcript, so the first screen a downloader sees is the one nothing else tests.
+    #    It is also the densest translated markup in the project: data-i18n-html paragraphs
+    #    carrying <code>, <kbd> and <b>.
+    p = probe_after(pick("hant"), "viewer.html")
+    failures += check("the downloaded viewer translates its drop zone",
+                      p["lang"] == "zh-Hant" and "把 Claude Code 對話紀錄拖到這裡" in p["drop"],
+                      f"lang={p['lang']!r} drop={p['drop'][:40]!r}")
+
+    # 6. Switching back is not a one-way door.
     p = probe_after(pick("hant") + ";" + pick("en"))
     failures += check("switching back to English restores it",
                       p["lang"] == "en" and "Your prompts" in p["nav"],
