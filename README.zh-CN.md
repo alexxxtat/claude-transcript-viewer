@@ -11,7 +11,7 @@
 
 ### [▶ 打开在线试玩页](https://alexxxtat.github.io/claude-transcript-viewer/)
 
-[![转出来的 session](docs/screenshot-main.png)](https://alexxxtat.github.io/claude-transcript-viewer/)
+[![转出来的 session](docs/screenshot-main-hans.png)](https://alexxxtat.github.io/claude-transcript-viewer/)
 
 一份虚构的 session，已经载好，什么都不用装。那一页跟下面要下载的是同一个文件，所以就算你把
 自己的记录拖上去，一样是在浏览器里解析、不会被上传。但真正的记录还是建议用下载版：那份你可以

@@ -30,6 +30,13 @@ SHOTS = {
     # The hero has to leave room for the first instruction. At 1100px tall it rendered
     # around 690px wide-on-GitHub, which pushed "download, open, drag" below the fold.
     "main":  (None, None, (1440, 680)),
+    # The hero for each translated README. Showing an English page there would advertise
+    # 繁體中文 support with a picture of the feature switched off. The menu entries are
+    # display:none until the popover opens, which does not stop a programmatic click.
+    "main-hant": ('document.querySelector(\'#langmenu [data-l="hant"]\').click()',
+                  None, (1440, 680)),
+    "main-hans": ('document.querySelector(\'#langmenu [data-l="hans"]\').click()',
+                  None, (1440, 680)),
     # Toggling the class directly rather than dispatching a click: a screenshot should not
     # depend on event timing, and a missed click silently produces a shot of the wrong screen.
     "media": ("document.getElementById('mediabtn').click()", None, (1440, 940)),
