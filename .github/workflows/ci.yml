@@ -48,6 +48,12 @@ jobs:
         # page the button was disabled to protect, leaving no way out but a reload.
         run: python3 demo/test_navigation.py
 
+      - name: Every language reaches every rendering path
+        # The lint proves the three string tables agree. It cannot prove the page reads them.
+        # A label written once at boot keeps its English after a switch, and only a browser
+        # that clicks the menu and reads the elements back can tell.
+        run: python3 demo/test_i18n.py
+
       - name: The published demo page must be reproducible too
         # docs/index.html is what GitHub Pages serves, so a stale one misrepresents the project
         # to everyone who arrives by link rather than by clone.

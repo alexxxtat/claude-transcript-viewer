@@ -43,12 +43,37 @@ are ordinary hygiene and three are project conventions you would not guess:
   defect. An em-dash is nearly always a clause bolted on after the sentence was already finished,
   so the fix is to rewrite it: a colon where a list follows, a full stop where a justification was
   tacked on. Code comments, en-dash ranges like `40–60`, and the bare no-data placeholder are fine.
+- **The three language tables must have identical keys**, and every `t('key')` the code calls
+  must exist. See below.
+
+## Adding or changing a user-facing string
+
+Every string lives in the `STR` table at the top of `src/viewer.js`, in three blocks: `en`,
+`hant`, `hans`. Adding one means adding it to all three. The lint fails otherwise, and it has
+to: `t()` falls back to English on a missing key, so the page keeps working and a Chinese
+reader gets one English sentence in the middle of a translated screen.
+
+Two things that are easy to get wrong:
+
+- **Do not machine-convert Traditional into Simplified.** The pairs that actually differ are
+  vocabulary, not characters: 檔案/文件, 搜尋/搜索, 網路/网络, 列印/打印, 設定/设置. A
+  character-level conversion gets every one of them wrong.
+- **Markup in the template gets a `data-i18n` attribute, not a literal.** `data-i18n` sets
+  textContent, `data-i18n-html` sets innerHTML, `data-i18n-title` and `data-i18n-ph` set the
+  attributes. Only literals from `STR` reach `innerHTML`, never anything out of a transcript,
+  and it must stay that way.
+
+`demo/test_i18n.py` drives a real browser because the lint cannot tell whether the page reads
+the table it validates. A label written once at boot keeps its English after a switch and looks
+completely normal until someone switches.
 
 ## Before opening a pull request
 
 ```bash
-python3 tools/lint.py               # build sync, privacy, voice, wiring
+python3 tools/lint.py               # build sync, privacy, voice, wiring, string tables
 python3 demo/test_hardening.py      # untrusted-input probes, needs Chrome
+python3 demo/test_navigation.py     # no navigable dead ends, needs Chrome
+python3 demo/test_i18n.py           # every language reaches every path, needs Chrome
 python3 demo/make_demo.py           # rebuild the demo transcript, needs Pillow
 python3 claude_transcript_viewer.py demo/sample-session.jsonl demo
 python3 demo/shoot.py               # refresh docs/screenshot-*.png if the UI moved

@@ -24,6 +24,372 @@ const TOOL_ICON = {
 const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);
 const MAX_INPUT = 900, MAX_RESULT = 1400;
 
+// ───────────────────────── language ─────────────────────────
+//
+// Every string the reader sees lives here, in three tables with identical keys. They are in
+// this file rather than in a JSON sidecar because the CSP pins a sha256 of the one inline
+// <script>: a second fetched resource would either need its own hash or a looser policy, and
+// the page has to keep working from file:// with no server to fetch from anyway.
+//
+// Traditional and Simplified are written out separately rather than converted from one
+// another. The pairs that differ are vocabulary, not characters: 檔案/文件, 搜尋/搜索,
+// 網路/网络, 列印/打印, 設定/设置. A character-level conversion gets all five wrong.
+//
+// A value is either a string or a function of its interpolated parts. Functions keep the
+// numbers and the grammar in the same place, so a language that orders them differently
+// (or does not pluralise) is not fighting a template syntax.
+const STR = {
+  en: {
+    searchPh: 'Search…  ( / )', more: 'More',
+    exportT: 'Save this transcript', export: ' Export',
+    homeT: 'Back to the start', home: ' Home',
+    tocT: 'Table of contents', langShort: ' EN',
+    expHtml: 'one self-contained file', expMd: 'for a notes vault or an issue',
+    expPdf: "via your browser's print dialog",
+    dropTitle: 'Drop a Claude Code transcript here',
+    dropSub: 'A <code>.jsonl</code> file from <code>~/.claude/projects/</code>. ' +
+      'You can also click to browse.',
+    dropPrivacy: 'Everything is parsed in this page. Nothing is uploaded, and no network ' +
+      'request is made.',
+    dropReload: 'Reloading starts over: a browser cannot re-read a dropped file on its own. ' +
+      'Use <b>Export</b> to keep one.',
+    hintWhy: '<b>That folder is hidden, and this page cannot open the picker inside it.</b> ' +
+      'The API that could (<code>showDirectoryPicker</code>) rejects on a local file, by ' +
+      'spec: a <code>file://</code> page is an opaque origin. Keeping this page openable ' +
+      'offline and serverless is worth more than a nicer picker. Two ways around it:',
+    hintPaste: 'In the picker, press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>G</kbd> and paste ',
+    copyT: 'Click to copy',
+    hintFinder: 'Or open a Finder window there once, and drag a file straight onto this ' +
+      'page:<br><code>open ~/.claude/projects</code>',
+    hintCleanup: 'Transcripts are deleted after 30 days unless you raise ' +
+      '<code>cleanupPeriodDays</code> in <code>~/.claude/settings.json</code>.',
+    navPrompts: 'Your prompts', navContents: 'Contents',
+    closeEsc: 'Close (Esc)', closeBtn: '✕ Close',
+    prevT: 'Previous (←)', nextT: 'Next (→)',
+    lbGoto: '↩ Jump to message', lbCopy: '⧉ Copy image',
+    lbCopyT: 'Copy the image, then paste it into images.google.com',
+    lbHint: '← → or swipe to navigate · Esc to close · right-click an image for your ' +
+      "browser's reverse-image search",
+    dlAll: '⤓ Download all', dlAllT: 'Download every image', topT: 'Back to top',
+    // Only the hosted demo page carries these; --demo-page injects the markup that uses them.
+    demoLive: 'Live demo',
+    demoWhat: 'A fictional session, safe to click around. Drop a <code>.jsonl</code> of your ' +
+      'own and it is parsed here in the page, never uploaded &mdash; but for real transcripts ' +
+      'prefer the downloaded file, which you can verify by reading it and running it with ' +
+      'Wi-Fi off.',
+    demoDownload: '↓ Download viewer.html', demoSource: 'Source',
+    copy: 'Copy', copied: 'Copied',
+    truncated: n => `\n… (truncated, ${n} chars total)`,
+    emptyCmd: '(empty command)', inPath: '  in ',
+    todoDone: (a, b) => `${a} / ${b} done`,
+    justNow: 'just now', ago: s => `${s} ago`,
+    unitY: 'y', unitMo: 'mo', unitD: 'd', unitH: 'h', unitM: 'm',
+    toolActions: n => `${n} tool actions`,
+    inputH: 'Input', outputH: 'Output', resultH: 'Result',
+    interrupted: 'Interrupted before it finished.',
+    injectedHead: 'Injected content',
+    injectedMeta: n => `${n} chars · injected by a skill or the system, not typed by you`,
+    reasoning: n => `💭 Claude&#39;s reasoning · ${n} chars`,
+    imageOnly: '(image only)', you: 'You', claude: 'Claude',
+    copyMsg: 'Copy this message',
+    filesTouched: (n, more) => `📁 ${n} files touched in this session ${more}`,
+    moreCount: n => `(+${n} more)`,
+    fReasoning: '💭 Reasoning', fTools: '🔧 Tools', fInjected: '⚙️ Injected',
+    gitBranch: 'git branch', timeSpent: 'time spent', screenshots: 'screenshots',
+    moreAbout: 'More about this session',
+    promptsReplies: (a, b) => `${a} prompts · ${b} replies`,
+    sBranch: 'Branch', sTime: 'Time', sMessages: 'Messages', sImages: 'Images',
+    sTokens: 'Tokens out', sTools: 'Tools', sSkills: 'Skills',
+    sSub: 'Subagent records', sSource: 'Source',
+    unknown: 'unknown', notRecorded: 'not recorded', none: 'none',
+    overTurns: (d, t) => `${d} over ${t} turns`,
+    turnsShort: n => `${n} turns`,
+    noneParen: '(none)',
+    linksCited: n => `🔗 ${n} links cited in this session`,
+    jumpCited: 'Jump to where it was cited',
+    mediaHead: n => `🖼 ${n} media items · click to enlarge, then jump back to its message`,
+    hAll: ' All', hBack: ' Back',
+    hBackList: 'Back to the list',
+    hBackOwn: 'Back to this file’s own transcript',
+    hOwnShown: 'This file’s own transcript is already shown',
+    hBackStart: 'Back to the start, to open another transcript',
+    hBackStartFiles: 'Back to the start, to open different files',
+    noPreview: '(no preview)',
+    firstPrompt: s => `First prompt: ${s}`,
+    mdFiles: n => `Files touched (${n})`,
+    mdBranch: b => `branch \`${b}\``,
+    mdTokens: n => `${n} output tokens`,
+    mdToolActions: n => `🔧 ${n} tool actions: `,
+    mdImages: n => `*(${n} image${n > 1 ? 's' : ''} in the HTML version)*`,
+    pickerHead: n => `${n} transcripts loaded`,
+    pickerTitle: n => `${n} transcripts`,
+    pPrompts: n => `${n} prompts`, pTools: n => `${n} tools`,
+    errDrop: 'Drop a .jsonl transcript, or a .md file.',
+    errReading: n => `Reading ${n} files…`,
+    errNoJson: 'No readable JSON lines. Are these Claude Code .jsonl transcripts?',
+    errEmbedded: 'Embedded transcript is unreadable.',
+    noResults: 'no results',
+    copiedPath: 'copied — now press ⌘⇧G and paste',
+    lbCopied: '✓ Copied — paste into images.google.com',
+    lbBlocked: '✕ Blocked — right-click the image instead',
+  },
+  hant: {
+    searchPh: '搜尋…  ( / )', more: '更多',
+    exportT: '儲存這份紀錄', export: ' 匯出',
+    homeT: '回到開始畫面', home: ' 首頁',
+    tocT: '目錄', langShort: ' 繁',
+    expHtml: '單一自足檔案', expMd: '適合筆記庫或 issue',
+    expPdf: '透過瀏覽器的列印對話框',
+    dropTitle: '把 Claude Code 對話紀錄拖到這裡',
+    dropSub: '來自 <code>~/.claude/projects/</code> 的 <code>.jsonl</code> 檔案。' +
+      '也可以點一下瀏覽選擇。',
+    dropPrivacy: '所有解析都在這個頁面裡完成。不會上傳任何東西，也不會發出任何網路請求。',
+    dropReload: '重新整理會從頭開始：瀏覽器沒辦法自己重讀拖進來的檔案。' +
+      '想留下來請用 <b>匯出</b>。',
+    hintWhy: '<b>那個資料夾是隱藏的，這個頁面也沒辦法直接在裡面開檔案選擇器。</b>' +
+      '做得到的那個 API（<code>showDirectoryPicker</code>）依規格會在本機檔案上拒絕：' +
+      '<code>file://</code> 頁面屬於不透明來源。讓這個頁面能離線、不需要伺服器就打開，' +
+      '比一個漂亮的選擇器更有價值。有兩個繞過的方法：',
+    hintPaste: '在選擇器裡按 <kbd>⌘</kbd><kbd>⇧</kbd><kbd>G</kbd>，然後貼上 ',
+    copyT: '點一下複製',
+    hintFinder: '或是先用 Finder 開啟那個位置一次，再把檔案直接拖到這個頁面上：' +
+      '<br><code>open ~/.claude/projects</code>',
+    hintCleanup: '除非你調高 <code>~/.claude/settings.json</code> 裡的 ' +
+      '<code>cleanupPeriodDays</code>，對話紀錄會在 30 天後刪除。',
+    navPrompts: '你的提問', navContents: '目錄',
+    closeEsc: '關閉（Esc）', closeBtn: '✕ 關閉',
+    prevT: '上一張（←）', nextT: '下一張（→）',
+    lbGoto: '↩ 跳到訊息', lbCopy: '⧉ 複製圖片',
+    lbCopyT: '複製圖片，然後貼到 images.google.com',
+    lbHint: '← → 或滑動切換 · Esc 關閉 · 在圖片上按右鍵可用瀏覽器的以圖搜圖',
+    dlAll: '⤓ 全部下載', dlAllT: '下載所有圖片', topT: '回到頂端',
+    demoLive: '線上示範',
+    demoWhat: '這是一份虛構的 session，可以放心亂點。把你自己的 <code>.jsonl</code> 拖進來，' +
+      '一樣是在這個頁面裡解析，不會上傳。不過真正的對話紀錄還是建議用下載下來的檔案，' +
+      '你可以先讀過內容，再關掉 Wi-Fi 執行來驗證。',
+    demoDownload: '↓ 下載 viewer.html', demoSource: '原始碼',
+    copy: '複製', copied: '已複製',
+    truncated: n => `\n…（已截斷，全文共 ${n} 字元）`,
+    emptyCmd: '（空指令）', inPath: '  於 ',
+    todoDone: (a, b) => `${a} / ${b} 已完成`,
+    justNow: '剛剛', ago: s => `${s}前`,
+    unitY: ' 年', unitMo: ' 個月', unitD: ' 天', unitH: ' 小時', unitM: ' 分鐘',
+    toolActions: n => `${n} 個工具動作`,
+    inputH: '輸入', outputH: '輸出', resultH: '結果',
+    interrupted: '尚未完成就被中斷。',
+    injectedHead: '注入的內容',
+    injectedMeta: n => `${n} 字元 · 由 skill 或系統注入，不是你打的`,
+    reasoning: n => `💭 Claude 的推理過程 · ${n} 字元`,
+    imageOnly: '（僅圖片）', you: '你', claude: 'Claude',
+    copyMsg: '複製這則訊息',
+    filesTouched: (n, more) => `📁 這個 session 動到 ${n} 個檔案 ${more}`,
+    moreCount: n => `（另有 ${n} 個）`,
+    fReasoning: '💭 推理', fTools: '🔧 工具', fInjected: '⚙️ 注入',
+    gitBranch: 'git 分支', timeSpent: '花費時間', screenshots: '截圖',
+    moreAbout: '關於這個 session 的更多資訊',
+    promptsReplies: (a, b) => `${a} 則提問 · ${b} 則回覆`,
+    sBranch: '分支', sTime: '時間', sMessages: '訊息', sImages: '圖片',
+    sTokens: '輸出 tokens', sTools: '工具', sSkills: 'Skills',
+    sSub: '子代理紀錄', sSource: '來源',
+    unknown: '未知', notRecorded: '未紀錄', none: '無',
+    overTurns: (d, t) => `${d}，共 ${t} 輪`,
+    turnsShort: n => `${n} 輪`,
+    noneParen: '（無）',
+    linksCited: n => `🔗 這個 session 引用了 ${n} 個連結`,
+    jumpCited: '跳到引用的位置',
+    mediaHead: n => `🖼 ${n} 個媒體項目 · 點一下放大，再跳回它所在的訊息`,
+    hAll: ' 全部', hBack: ' 返回',
+    hBackList: '回到清單',
+    hBackOwn: '回到這個檔案自己的對話紀錄',
+    hOwnShown: '已經顯示這個檔案自己的對話紀錄',
+    hBackStart: '回到開始畫面，開啟另一份紀錄',
+    hBackStartFiles: '回到開始畫面，開啟其他檔案',
+    noPreview: '（無預覽）',
+    firstPrompt: s => `第一個提問：${s}`,
+    mdFiles: n => `動到的檔案（${n}）`,
+    mdBranch: b => `分支 \`${b}\``,
+    mdTokens: n => `${n} 輸出 tokens`,
+    mdToolActions: n => `🔧 ${n} 個工具動作：`,
+    mdImages: n => `*（HTML 版本裡有 ${n} 張圖片）*`,
+    pickerHead: n => `已載入 ${n} 份對話紀錄`,
+    pickerTitle: n => `${n} 份對話紀錄`,
+    pPrompts: n => `${n} 則提問`, pTools: n => `${n} 次工具`,
+    errDrop: '請拖入 .jsonl 對話紀錄，或 .md 檔案。',
+    errReading: n => `正在讀取 ${n} 個檔案…`,
+    errNoJson: '讀不到可解析的 JSON 行。這些是 Claude Code 的 .jsonl 對話紀錄嗎？',
+    errEmbedded: '內嵌的對話紀錄無法讀取。',
+    noResults: '沒有結果',
+    copiedPath: '已複製，現在按 ⌘⇧G 貼上',
+    lbCopied: '✓ 已複製，貼到 images.google.com',
+    lbBlocked: '✕ 被擋下，請改用右鍵',
+  },
+  hans: {
+    searchPh: '搜索…  ( / )', more: '更多',
+    exportT: '保存这份记录', export: ' 导出',
+    homeT: '回到开始界面', home: ' 首页',
+    tocT: '目录', langShort: ' 简',
+    expHtml: '单个自足文件', expMd: '适合笔记库或 issue',
+    expPdf: '通过浏览器的打印对话框',
+    dropTitle: '把 Claude Code 对话记录拖到这里',
+    dropSub: '来自 <code>~/.claude/projects/</code> 的 <code>.jsonl</code> 文件。' +
+      '也可以点一下浏览选择。',
+    dropPrivacy: '所有解析都在这个页面里完成。不会上传任何东西，也不会发出任何网络请求。',
+    dropReload: '刷新会从头开始：浏览器没办法自己重读拖进来的文件。' +
+      '想留下来请用 <b>导出</b>。',
+    hintWhy: '<b>那个文件夹是隐藏的，这个页面也没办法直接在里面打开文件选择器。</b>' +
+      '做得到的那个 API（<code>showDirectoryPicker</code>）按规范会在本地文件上拒绝：' +
+      '<code>file://</code> 页面属于不透明来源。让这个页面能离线、不需要服务器就打开，' +
+      '比一个漂亮的选择器更有价值。有两个绕过的办法：',
+    hintPaste: '在选择器里按 <kbd>⌘</kbd><kbd>⇧</kbd><kbd>G</kbd>，然后粘贴 ',
+    copyT: '点一下复制',
+    hintFinder: '或者先用访达打开那个位置一次，再把文件直接拖到这个页面上：' +
+      '<br><code>open ~/.claude/projects</code>',
+    hintCleanup: '除非你调高 <code>~/.claude/settings.json</code> 里的 ' +
+      '<code>cleanupPeriodDays</code>，对话记录会在 30 天后删除。',
+    navPrompts: '你的提问', navContents: '目录',
+    closeEsc: '关闭（Esc）', closeBtn: '✕ 关闭',
+    prevT: '上一张（←）', nextT: '下一张（→）',
+    lbGoto: '↩ 跳到消息', lbCopy: '⧉ 复制图片',
+    lbCopyT: '复制图片，然后粘贴到 images.google.com',
+    lbHint: '← → 或滑动切换 · Esc 关闭 · 在图片上点右键可用浏览器的以图搜图',
+    dlAll: '⤓ 全部下载', dlAllT: '下载所有图片', topT: '回到顶部',
+    demoLive: '在线演示',
+    demoWhat: '这是一份虚构的 session，可以放心乱点。把你自己的 <code>.jsonl</code> 拖进来，' +
+      '一样是在这个页面里解析，不会上传。不过真正的对话记录还是建议用下载下来的文件，' +
+      '你可以先读过内容，再关掉 Wi-Fi 运行来验证。',
+    demoDownload: '↓ 下载 viewer.html', demoSource: '源代码',
+    copy: '复制', copied: '已复制',
+    truncated: n => `\n…（已截断，全文共 ${n} 字符）`,
+    emptyCmd: '（空命令）', inPath: '  于 ',
+    todoDone: (a, b) => `${a} / ${b} 已完成`,
+    justNow: '刚刚', ago: s => `${s}前`,
+    unitY: ' 年', unitMo: ' 个月', unitD: ' 天', unitH: ' 小时', unitM: ' 分钟',
+    toolActions: n => `${n} 个工具动作`,
+    inputH: '输入', outputH: '输出', resultH: '结果',
+    interrupted: '尚未完成就被中断。',
+    injectedHead: '注入的内容',
+    injectedMeta: n => `${n} 字符 · 由 skill 或系统注入，不是你打的`,
+    reasoning: n => `💭 Claude 的推理过程 · ${n} 字符`,
+    imageOnly: '（仅图片）', you: '你', claude: 'Claude',
+    copyMsg: '复制这条消息',
+    filesTouched: (n, more) => `📁 这个 session 改动了 ${n} 个文件 ${more}`,
+    moreCount: n => `（另有 ${n} 个）`,
+    fReasoning: '💭 推理', fTools: '🔧 工具', fInjected: '⚙️ 注入',
+    gitBranch: 'git 分支', timeSpent: '花费时间', screenshots: '截图',
+    moreAbout: '关于这个 session 的更多信息',
+    promptsReplies: (a, b) => `${a} 条提问 · ${b} 条回复`,
+    sBranch: '分支', sTime: '时间', sMessages: '消息', sImages: '图片',
+    sTokens: '输出 tokens', sTools: '工具', sSkills: 'Skills',
+    sSub: '子代理记录', sSource: '来源',
+    unknown: '未知', notRecorded: '未记录', none: '无',
+    overTurns: (d, t) => `${d}，共 ${t} 轮`,
+    turnsShort: n => `${n} 轮`,
+    noneParen: '（无）',
+    linksCited: n => `🔗 这个 session 引用了 ${n} 个链接`,
+    jumpCited: '跳到引用的位置',
+    mediaHead: n => `🖼 ${n} 个媒体项 · 点一下放大，再跳回它所在的消息`,
+    hAll: ' 全部', hBack: ' 返回',
+    hBackList: '回到列表',
+    hBackOwn: '回到这个文件自己的对话记录',
+    hOwnShown: '已经显示这个文件自己的对话记录',
+    hBackStart: '回到开始界面，打开另一份记录',
+    hBackStartFiles: '回到开始界面，打开其他文件',
+    noPreview: '（无预览）',
+    firstPrompt: s => `第一个提问：${s}`,
+    mdFiles: n => `改动的文件（${n}）`,
+    mdBranch: b => `分支 \`${b}\``,
+    mdTokens: n => `${n} 输出 tokens`,
+    mdToolActions: n => `🔧 ${n} 个工具动作：`,
+    mdImages: n => `*（HTML 版本里有 ${n} 张图片）*`,
+    pickerHead: n => `已载入 ${n} 份对话记录`,
+    pickerTitle: n => `${n} 份对话记录`,
+    pPrompts: n => `${n} 条提问`, pTools: n => `${n} 次工具`,
+    errDrop: '请拖入 .jsonl 对话记录，或 .md 文件。',
+    errReading: n => `正在读取 ${n} 个文件…`,
+    errNoJson: '读不到可解析的 JSON 行。这些是 Claude Code 的 .jsonl 对话记录吗？',
+    errEmbedded: '内嵌的对话记录无法读取。',
+    noResults: '没有结果',
+    copiedPath: '已复制，现在按 ⌘⇧G 粘贴',
+    lbCopied: '✓ 已复制，粘贴到 images.google.com',
+    lbBlocked: '✕ 被挡下，请改用右键',
+  },
+};
+
+// `lang` on <html> is not decoration: with no tag a browser picks Han glyphs by font order,
+// so Traditional text can render with Simplified forms of the shared codepoints.
+const LANG_TAG = { en: 'en', hant: 'zh-Hant', hans: 'zh-Hans' };
+const LANG_KEY = 'ctv-lang';
+
+// localStorage throws rather than returns null in a few file:// configurations, and this
+// page's whole promise is that it opens from a local file. A dead preference is survivable;
+// a page that fails to boot is not.
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch { /* private mode, file:// */ } },
+};
+
+function detectLang() {
+  const saved = store.get(LANG_KEY);
+  if (saved && STR[saved]) return saved;
+  for (const tag of (navigator.languages || [navigator.language || ''])) {
+    const s = String(tag).toLowerCase();
+    if (!s.startsWith('zh')) continue;
+    // Script subtag wins when present; otherwise region decides. zh-CN and zh-SG are
+    // Simplified, and everything else Chinese defaults to Traditional.
+    if (s.includes('hans')) return 'hans';
+    if (s.includes('hant')) return 'hant';
+    return /\b(cn|sg)\b/.test(s.replace(/-/g, ' ')) ? 'hans' : 'hant';
+  }
+  return 'en';
+}
+
+let LANG = detectLang();
+
+/** Look up a string, falling back to English so a missing key degrades to readable text
+ *  rather than to `undefined`. tools/lint.py fails the build if a key is ever missing. */
+function t(k, ...args) {
+  const v = STR[LANG][k] != null ? STR[LANG][k] : STR.en[k];
+  if (v == null) return k;
+  return typeof v === 'function' ? v(...args) : v;
+}
+
+/** Translate the markup that is in the template rather than generated by render().
+ *
+ *  `data-i18n-html` assigns innerHTML. Every value it can receive is a literal in the STR
+ *  table above, never anything read from a transcript, so no untrusted string can reach it.
+ *  The distinction matters here: the rest of this file is careful never to build markup from
+ *  file content, and this is the one place that would look like an exception.
+ */
+function applyStatic(root) {
+  const scope = root || document;
+  scope.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  scope.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });
+  scope.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
+  scope.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+  document.documentElement.lang = LANG_TAG[LANG];
+  $$('#langmenu [data-l]').forEach(b => b.classList.toggle('on', b.dataset.l === LANG));
+}
+
+/** Switch language and rebuild whatever is on screen.
+ *
+ *  render() bakes strings into the HTML it produces, so a language change has to re-run it.
+ *  Re-running load() would also re-run jumpToHash() and throw away the reader's position, so
+ *  the scroll offset is carried across by hand. */
+function setLang(l) {
+  if (!STR[l] || l === LANG) return;
+  LANG = l;
+  store.set(LANG_KEY, l);
+  const y = window.scrollY;
+  applyStatic();
+  if (document.body.classList.contains('picking')) showPicker();
+  else if (CURRENT) { const m = parseRecords(CURRENT.records); render(m, CURRENT.srcName); wire(); updatePill(); }
+  else if (LAST_DOC) {
+    render(markdownModel(LAST_DOC.text, LAST_DOC.name), LAST_DOC.name);
+    wire(); updatePill();
+  }
+  window.scrollTo({ top: y });
+}
+
 // ───────────────────────── markdown ─────────────────────────
 
 const esc = s => String(s).replace(/[&<>"]/g, c =>
@@ -69,7 +435,7 @@ function mdToHtml(text) {
     if (i % 2 === 1) {
       const nl = part.indexOf('\n');
       const code = nl === -1 ? part : part.slice(nl + 1);
-      out.push('<div class="codewrap"><button class="copy">Copy</button><pre><code>' +
+      out.push(`<div class="codewrap"><button class="copy">${t('copy')}</button><pre><code>` +
         esc(code.replace(/\s+$/, '')) + '</code></pre></div>');
       return;
     }
@@ -105,7 +471,7 @@ function mdToHtml(text) {
 }
 
 const clip = (s, limit) => s.length <= limit ? s
-  : s.slice(0, limit) + `\n… (truncated, ${s.length.toLocaleString()} chars total)`;
+  : s.slice(0, limit) + t('truncated', s.length.toLocaleString());
 const preBlock = (s, limit) => '<pre><code>' + esc(clip(s, limit)) + '</code></pre>';
 
 // ───────────────────────── parsing ─────────────────────────
@@ -142,28 +508,28 @@ const shortPath = (p, cwd) => (cwd && p.startsWith(cwd)) ? p.slice(cwd.length).r
 function toolLabel(name, inp, cwd) {
   const g = k => (inp && typeof inp === 'object' && inp[k] != null) ? String(inp[k]) : '';
   switch (name) {
-    case 'Bash': return g('command').split(/\s+/).join(' ').slice(0, 110) || '(empty command)';
+    case 'Bash': return g('command').split(/\s+/).join(' ').slice(0, 110) || t('emptyCmd');
     case 'Read': case 'Edit': case 'Write': case 'NotebookEdit':
       return shortPath(g('file_path') || g('notebook_path'), cwd);
     case 'Glob': case 'Grep':
-      return (g('pattern') + (g('path') ? '  in ' + shortPath(g('path'), cwd) : '')).slice(0, 110);
+      return (g('pattern') + (g('path') ? t('inPath') + shortPath(g('path'), cwd) : '')).slice(0, 110);
     case 'WebSearch': return g('query').slice(0, 110);
     case 'WebFetch': return g('url').slice(0, 110);
     case 'Task': case 'Agent': return g('description').slice(0, 110);
     case 'Skill': return g('skill');
     case 'TodoWrite': {
-      const t = (inp && inp.todos) || [];
-      return `${t.filter(x => x.status === 'completed').length} / ${t.length} done`;
+      const todos = (inp && inp.todos) || [];
+      return t('todoDone', todos.filter(x => x.status === 'completed').length, todos.length);
     }
     default: return JSON.stringify(inp || {}).slice(0, 110);
   }
 }
 
 function todoHtml(inp) {
-  const rows = ((inp && inp.todos) || []).map(t => {
-    const mark = t.status === 'completed' ? '✅' : t.status === 'in_progress' ? '🔄' : '⬜️';
-    const cls = t.status === 'completed' ? ' class="done"' : '';
-    return `<li${cls}>${mark} ${esc(t.content || t.activeForm || '')}</li>`;
+  const rows = ((inp && inp.todos) || []).map(todo => {
+    const mark = todo.status === 'completed' ? '✅' : todo.status === 'in_progress' ? '🔄' : '⬜️';
+    const cls = todo.status === 'completed' ? ' class="done"' : '';
+    return `<li${cls}>${mark} ${esc(todo.content || todo.activeForm || '')}</li>`;
   });
   return '<ul class="todo">' + rows.join('') + '</ul>';
 }
@@ -194,8 +560,8 @@ function parseRecords(records) {
             : Array.isArray(rc) ? rc.filter(x => x && x.text).map(x => x.text).join('\n') : '');
         }
     if (!title && r.type === 'user' && !r.isMeta) {
-      const t = textOf(c).trim().split(/\s+/).join(' ');
-      if (t && !t.startsWith('<')) title = t.slice(0, 60);
+      const txt = textOf(c).trim().split(/\s+/).join(' ');
+      if (txt && !txt.startsWith('<')) title = txt.slice(0, 60);
     }
   }
 
@@ -224,11 +590,11 @@ function parseRecords(records) {
       if (b.type === 'thinking') {
         // Claude Code persists only a signature here — the reasoning text is not saved.
         // Rendered anyway so it appears automatically if that ever changes.
-        const t = (b.thinking || '').trim();
-        if (t) items.push({ kind: 'think', text: t, ts });
+        const txt = (b.thinking || '').trim();
+        if (txt) items.push({ kind: 'think', text: txt, ts });
       } else if (b.type === 'text') {
-        const t = (b.text || '').trim();
-        if (t) items.push({ kind: 'assistant', text: t, pics: imagesOf([b]), ts });
+        const txt = (b.text || '').trim();
+        if (txt) items.push({ kind: 'assistant', text: txt, pics: imagesOf([b]), ts });
       } else if (b.type === 'tool_use') {
         const name = b.name || '?', inp = b.input || {};
         bump(tools, name);
@@ -247,7 +613,7 @@ function parseRecords(records) {
   return {
     items, files, tools, tokensOut, cwd, skills,
     branch, version, durationMs, turns, sidechain,
-    title: aiTitle || title || '(no preview)',
+    title: aiTitle || title || t('noPreview'),
     subtitle: aiTitle ? title : '',
   };
 }
@@ -294,7 +660,8 @@ function parseJsonl(text) {
 const dur = ms => {
   if (!ms) return '';
   const m = Math.round(ms / 60000);
-  return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`;
+  return m < 60 ? `${m}${t('unitM')}`
+    : `${Math.floor(m / 60)}${t('unitH')} ${m % 60}${t('unitM')}`;
 };
 
 const LINKS = [];
@@ -329,7 +696,7 @@ function render(model, srcName) {
     run.forEach(([name]) => kinds.set(name, (kinds.get(name) || 0) + 1));
     const head = [...kinds.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
       .map(([k, v]) => (TOOL_ICON[k] || '🔧') + k + (v > 1 ? '×' + v : '')).join(' · ');
-    body.push(`<details class="toolrun"><summary>🔧 ${run.length} tool actions · ${head}` +
+    body.push(`<details class="toolrun"><summary>🔧 ${t('toolActions', run.length)} · ${head}` +
       `</summary><div class="inner">${run.map(([, h]) => h).join('')}</div></details>`);
     run.length = 0;
   };
@@ -342,15 +709,16 @@ function render(model, srcName) {
         collectLinks(String(it.input.url), lastMid, lastSeq);
       const x = it.extra || {};
       let detail = it.name === 'TodoWrite' ? todoHtml(it.input)
-        : '<h6>Input</h6>' + preBlock(typeof it.input === 'string' ? it.input
+        : `<h6>${t('inputH')}</h6>` + preBlock(typeof it.input === 'string' ? it.input
           : JSON.stringify(it.input, null, 1), MAX_INPUT);
       // stdout and stderr arrive merged in tool_result; when the structured result kept
       // them apart, show them apart, because an error reads differently from output.
-      if (x.stdout) detail += '<h6>Output</h6>' + preBlock(x.stdout, MAX_RESULT);
+      // `stderr` stays untranslated: it is the stream's name, not a label.
+      if (x.stdout) detail += `<h6>${t('outputH')}</h6>` + preBlock(x.stdout, MAX_RESULT);
       if (x.stderr) detail += '<h6 class="err">stderr</h6>' + preBlock(x.stderr, MAX_RESULT);
       if (!x.stdout && !x.stderr && it.result)
-        detail += '<h6>Result</h6>' + preBlock(it.result, MAX_RESULT);
-      if (x.interrupted) detail += '<p class="warn">Interrupted before it finished.</p>';
+        detail += `<h6>${t('resultH')}</h6>` + preBlock(it.result, MAX_RESULT);
+      if (x.interrupted) detail += `<p class="warn">${t('interrupted')}</p>`;
       run.push([it.name,
         '<details class="tool"><summary>' +
         `<span class="name">${TOOL_ICON[it.name] || '🔧'} ${esc(it.name)}</span>` +
@@ -364,10 +732,10 @@ function render(model, srcName) {
     if (it.kind === 'meta') {
       n.meta++;
       const head = (it.text.split('\n')[0] || '').replace(/^#+\s*/, '').trim().slice(0, 70)
-        || 'Injected content';
+        || t('injectedHead');
       body.push(`<details class="meta-block"><summary>⚙️ ${esc(head)} · ` +
-        `${it.text.length.toLocaleString()} chars · injected by a skill or the system, ` +
-        `not typed by you</summary><div class="card">${mdToHtml(it.text)}</div></details>`);
+        `${t('injectedMeta', it.text.length.toLocaleString())}` +
+        `</summary><div class="card">${mdToHtml(it.text)}</div></details>`);
       continue;
     }
     if (it.kind === 'doc') {
@@ -376,9 +744,8 @@ function render(model, srcName) {
     }
     if (it.kind === 'think') {
       n.think++;
-      body.push('<details class="think"><summary>💭 Claude&#39;s reasoning · ' +
-        `${it.text.length.toLocaleString()} chars</summary>` +
-        `<div class="card">${mdToHtml(it.text)}</div></details>`);
+      body.push(`<details class="think"><summary>${t('reasoning', it.text.length.toLocaleString())}` +
+        `</summary><div class="card">${mdToHtml(it.text)}</div></details>`);
       continue;
     }
 
@@ -386,7 +753,7 @@ function render(model, srcName) {
     const pics = it.pics || [];
     n.img += pics.length;
     const mid = 'm' + seq;
-    const cap = esc(it.text.split(/\s+/).join(' ').slice(0, 38) || '(image only)');
+    const cap = esc(it.text.split(/\s+/).join(' ').slice(0, 38) || t('imageOnly'));
     const shots = pics.length ? '<div class="shots">' + pics.map(u =>
       `<img src="${esc(u)}" loading="lazy" data-msg="${mid}" data-num="#${seq}" data-cap="${cap}">`
     ).join('') + '</div>' : '';
@@ -395,9 +762,9 @@ function render(model, srcName) {
     lastMid = mid; lastSeq = seq;
     collectLinks(it.text, mid, seq);
     body.push(`<div class="msg ${it.kind}" id="${mid}"><div class="who">` +
-      `<b>${it.kind === 'user' ? 'You' : 'Claude'}</b>` +
+      `<b>${it.kind === 'user' ? t('you') : t('claude')}</b>` +
       `<a class="num" href="#${mid}">#${seq}</a>${stamp}` +
-      `<button class="msgcopy" data-m="${mid}" title="Copy this message">⧉</button></div>` +
+      `<button class="msgcopy" data-m="${mid}" title="${t('copyMsg')}">⧉</button></div>` +
       `<div class="card">${mdToHtml(it.text)}${shots}</div></div>`);
   }
   flushRun();
@@ -406,9 +773,9 @@ function render(model, srcName) {
   if (files.size) {
     const top = [...files.entries()].sort((a, b) => b[1] - a[1]);
     const lis = top.slice(0, 24).map(([f, c]) => `<li>${esc(f)} <b>×${c}</b></li>`).join('');
-    const more = top.length > 24 ? `(+${top.length - 24} more)` : '';
-    filebar = `<div class="filebar"><h3>📁 ${files.size} files touched in this session ` +
-      `${more}</h3><ul>${lis}</ul></div>`;
+    const more = top.length > 24 ? t('moreCount', top.length - 24) : '';
+    filebar = `<div class="filebar"><h3>${t('filesTouched', files.size, more)}` +
+      `</h3><ul>${lis}</ul></div>`;
   }
 
   const box = (k, label, c, on) => !c ? '' :
@@ -416,11 +783,11 @@ function render(model, srcName) {
     `${label} <span class="n">${c}</span></label>`;
 
   $('#filters').innerHTML =
-    box('user', 'You', n.user, true) +
-    box('assistant', 'Claude', n.assistant, true) +
-    box('think', '💭 Reasoning', n.think, false) +
-    box('tool', '🔧 Tools', n.tool, false) +
-    box('meta', '⚙️ Injected', n.meta, false);
+    box('user', t('you'), n.user, true) +
+    box('assistant', t('claude'), n.assistant, true) +
+    box('think', t('fReasoning'), n.think, false) +
+    box('tool', t('fTools'), n.tool, false) +
+    box('meta', t('fInjected'), n.meta, false);
 
   // Four facts earn a place on the strip; the rest sits behind ⓘ. A row of nine
   // dot-separated values reads as one long string and nothing in it stands out.
@@ -429,66 +796,65 @@ function render(model, srcName) {
     `<b>${icon}</b>${esc(text)}</span>`;
   const topTools = [...tools.entries()].sort((a, b) => b[1] - a[1]);
   $('#stats').innerHTML =
-    chip('⑂', branch, 'git branch') +
-    chip('⏱', dur(durationMs) && `${dur(durationMs)} · ${turns} turns`, 'time spent') +
-    chip('💬', `${n.user} prompts · ${n.assistant} replies`) +
-    chip('🖼', n.img ? String(n.img) : '', 'screenshots') +
-    '<button class="chip more" id="statsbtn" title="More about this session">ⓘ</button>';
+    chip('⑂', branch, t('gitBranch')) +
+    chip('⏱', dur(durationMs) && `${dur(durationMs)} · ${t('turnsShort', turns)}`, t('timeSpent')) +
+    chip('💬', t('promptsReplies', n.user, n.assistant)) +
+    chip('🖼', n.img ? String(n.img) : '', t('screenshots')) +
+    `<button class="chip more" id="statsbtn" title="${t('moreAbout')}">ⓘ</button>`;
   $('#statsmore').innerHTML = [
-    ['Branch', branch || 'unknown'],
-    ['Time', dur(durationMs) ? `${dur(durationMs)} over ${turns} turns` : 'not recorded'],
-    ['Messages', `${n.user} prompts · ${n.assistant} replies`],
-    ['Images', String(n.img)],
-    ['Tokens out', tokensOut.toLocaleString()],
-    ['Tools', topTools.map(([k, v]) => `${k}×${v}`).join(' · ') || 'none'],
-    ['Skills', skills.size ? [...skills].join(', ') : 'none'],
-    ['Subagent records', sidechain || '0'],
-    ['Source', srcName],
+    [t('sBranch'), branch || t('unknown')],
+    [t('sTime'), dur(durationMs) ? t('overTurns', dur(durationMs), turns) : t('notRecorded')],
+    [t('sMessages'), t('promptsReplies', n.user, n.assistant)],
+    [t('sImages'), String(n.img)],
+    [t('sTokens'), tokensOut.toLocaleString()],
+    [t('sTools'), topTools.map(([k, v]) => `${k}×${v}`).join(' · ') || t('none')],
+    [t('sSkills'), skills.size ? [...skills].join(', ') : t('none')],
+    [t('sSub'), sidechain || '0'],
+    [t('sSource'), srcName],
   ].map(([k, v]) => `<div><span>${esc(k)}</span>${esc(String(v))}</div>`).join('');
   $('#statsbtn').onclick = () => $('#statsmore').classList.toggle('open');
 
   if (model.isDoc) {
-    $('#navtitle').textContent = 'Contents';
+    $('#navtitle').textContent = t('navContents');
     toc.length = 0;
     HEADINGS.forEach(h => toc.push(
       `<a href="#${h.id}" class="lvl${h.lvl}">${h.label}</a>`));
   } else {
-    $('#navtitle').textContent = 'Your prompts';
+    $('#navtitle').textContent = t('navPrompts');
   }
 
   document.title = title;
   $('h1').textContent = title;
-  $('h1').title = subtitle ? `First prompt: ${subtitle}` : title;
-  $('#toc').innerHTML = toc.join('\n') || '<a>(none)</a>';
+  $('h1').title = subtitle ? t('firstPrompt', subtitle) : title;
+  $('#toc').innerHTML = toc.join('\n') || `<a>${t('noneParen')}</a>`;
   $('.chat').innerHTML = filebar + body.join('\n');
   $('#mediabtn').textContent = '🖼 ' + n.img;
   $('#mediabtn').hidden = !n.img;
   $('#linkbtn').textContent = '🔗 ' + LINKS.length;
   $('#linkbtn').hidden = !LINKS.length;
-  $('#linkhead').textContent = `🔗 ${LINKS.length} links cited in this session`;
+  $('#linkhead').textContent = t('linksCited', LINKS.length);
   $('#linklist').innerHTML = LINKS.map(l => {
     let host = l.url;
     try { host = new URL(l.url).host.replace(/^www\./, ''); } catch (e) { /* keep raw */ }
     return `<div class="linkrow"><a href="${esc(l.url)}" rel="noreferrer" target="_blank">` +
       `<b>${esc(l.label || host)}</b><span>${esc(l.url)}</span></a>` +
-      `<button data-m="${l.mid}" title="Jump to where it was cited">↩ #${l.seq}</button></div>`;
+      `<button data-m="${l.mid}" title="${t('jumpCited')}">↩ #${l.seq}</button></div>`;
   }).join('');
-  $('#mediahead').textContent =
-    `🖼 ${n.img} media items · click to enlarge, then jump back to its message`;
+  $('#mediahead').textContent = t('mediaHead', n.img);
   document.body.classList.add('loaded', 'hide-think', 'hide-tool', 'hide-meta');
   document.body.classList.toggle('docmode', !!model.isDoc);
   document.body.classList.remove('picking');
   const showingEmbedded = EMBEDDED && srcName === EMBEDDED.srcName;
   $('#homebtn').innerHTML = SESSIONS.length > 1
-    ? '←<span class="lbl"> All</span>'
+    ? `←<span class="lbl">${esc(t('hAll'))}</span>`
     : (EMBEDDED && !showingEmbedded
-        ? '↩<span class="lbl"> Back</span>'
-        : '⌂<span class="lbl"> Home</span>');
-  $('#homebtn').title = SESSIONS.length > 1 ? 'Back to the list'
+        ? `↩<span class="lbl">${esc(t('hBack'))}</span>`
+        : `⌂<span class="lbl">${esc(t('home'))}</span>`);
+  $('#homebtn').title = SESSIONS.length > 1 ? t('hBackList')
     : (EMBEDDED && !showingEmbedded
-        ? 'Back to this file\u2019s own transcript'
-        : (EMBEDDED ? 'This file\u2019s own transcript is already shown'
-                    : 'Back to the start, to open another transcript'));
+        ? t('hBackOwn')
+        : (EMBEDDED ? t('hOwnShown')
+                    : t('hBackStart')));
   $('#homebtn').disabled = !!(EMBEDDED && showingEmbedded && SESSIONS.length < 2);
   return n;
 }
@@ -507,18 +873,15 @@ function wire() {
   $$('.copy').forEach(b => b.onclick = e => {
     e.stopPropagation();
     navigator.clipboard.writeText(b.parentNode.querySelector('code').textContent);
-    b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy', 1200);
+    b.textContent = t('copied'); setTimeout(() => b.textContent = t('copy'), 1200);
   });
 
   // relative timestamps
-  const REL = [[31536e6, 'y'], [2592e6, 'mo'], [864e5, 'd'], [36e5, 'h'], [6e4, 'm']];
   $$('[data-ts]').forEach(el => {
     const d = new Date(el.dataset.ts);
     if (isNaN(d)) return;
-    const diff = Date.now() - d;
-    let s = 'just now';
-    for (const [ms, u] of REL) if (diff >= ms) { s = Math.floor(diff / ms) + u + ' ago'; break; }
-    el.textContent = s; el.title = d.toLocaleString();
+    el.textContent = relTime(el.dataset.ts);
+    el.title = d.toLocaleString();
   });
 
   $$('.msgcopy').forEach(b => b.onclick = () => {
@@ -542,7 +905,7 @@ function openLb(i) {
     (s.dataset.cap ? '   ·   ' + s.dataset.cap : '');
   const g = $('#lbgoto');
   g.dataset.target = s.dataset.msg || '';
-  g.textContent = '↩ Jump to message ' + (s.dataset.num || '');
+  g.textContent = t('lbGoto') + ' ' + (s.dataset.num || '');
   lb().classList.add('open'); document.body.style.overflow = 'hidden';
 }
 function closeLb() {
@@ -556,11 +919,11 @@ function openMedia() {
   if (!grid.childElementCount)
     shots.forEach((im, i) => {
       const fig = document.createElement('figure');
-      const t = document.createElement('img');
-      t.src = im.src; t.loading = 'lazy';
+      const thumb = document.createElement('img');
+      thumb.src = im.src; thumb.loading = 'lazy';
       const cap = document.createElement('figcaption');
       cap.textContent = `${im.dataset.num || ''} ${im.dataset.cap || ''}`;
-      fig.append(t, cap);
+      fig.append(thumb, cap);
       fig.onclick = () => openLb(i);
       grid.appendChild(fig);
     });
@@ -618,7 +981,7 @@ function runSearch(q) {
     frag.appendChild(document.createTextNode(text.slice(i)));
     node.parentNode.replaceChild(frag, node);
   });
-  cnt.textContent = hits.length ? '0 / ' + hits.length : 'no results';
+  cnt.textContent = hits.length ? '0 / ' + hits.length : t('noResults');
   if (hits.length) go(0);
 }
 function go(k) {
@@ -662,13 +1025,13 @@ function updatePill() {
 function toMarkdown(model, srcName) {
   const { items, files, tools, tokensOut, title, branch, durationMs, turns } = model;
   const out = [`# ${title}`, ''];
-  const head = [srcName, branch && `branch \`${branch}\``,
-    dur(durationMs) && `${dur(durationMs)} over ${turns} turns`,
-    `${tokensOut.toLocaleString()} output tokens`].filter(Boolean).join(' · ');
+  const head = [srcName, branch && t('mdBranch', branch),
+    dur(durationMs) && t('overTurns', dur(durationMs), turns),
+    t('mdTokens', tokensOut.toLocaleString())].filter(Boolean).join(' · ');
   out.push(`> ${head}`, '');
 
   if (files.size) {
-    out.push(`## Files touched (${files.size})`, '');
+    out.push(`## ${t('mdFiles', files.size)}`, '');
     [...files.entries()].sort((a, b) => b[1] - a[1])
       .forEach(([f, c]) => out.push(`- \`${f}\` ×${c}`));
     out.push('');
@@ -679,7 +1042,7 @@ function toMarkdown(model, srcName) {
     if (!run.length) return;
     const k = new Map();
     run.forEach(n => k.set(n, (k.get(n) || 0) + 1));
-    out.push(`> 🔧 ${run.length} tool actions: ` +
+    out.push('> ' + t('mdToolActions', run.length) +
       [...k.entries()].sort((a, b) => b[1] - a[1])
         .map(([n, c]) => c > 1 ? `${n}×${c}` : n).join(', '), '');
     run.length = 0;
@@ -691,10 +1054,10 @@ function toMarkdown(model, srcName) {
     if (it.kind === 'meta' || it.kind === 'think') continue;
     seq++;
     const when = it.ts ? new Date(it.ts).toLocaleString() : '';
-    out.push(`## ${it.kind === 'user' ? 'You' : 'Claude'} · #${seq}${when ? ' · ' + when : ''}`,
+    out.push(`## ${it.kind === 'user' ? t('you') : t('claude')} · #${seq}${when ? ' · ' + when : ''}`,
       '', it.text, '');
     const pics = (it.pics || []).length;
-    if (pics) out.push(`*(${pics} image${pics > 1 ? 's' : ''} in the HTML version)*`, '');
+    if (pics) out.push(t('mdImages', pics), '');
   }
   flush();
   return out.join('\n');
@@ -718,15 +1081,18 @@ function exportHtml(records, name) {
 
 // ───────────────────────── boot ─────────────────────────
 
-let CURRENT = null, SESSIONS = [], EMBEDDED = null;
+let CURRENT = null, SESSIONS = [], EMBEDDED = null, LAST_DOC = null;
 
+// One implementation, used by both the message stamps and the picker rows. They printed the
+// same thing from two copies of this table before, which is two places to forget a language.
+const REL = [[31536e6, 'unitY'], [2592e6, 'unitMo'], [864e5, 'unitD'],
+             [36e5, 'unitH'], [6e4, 'unitM']];
 const relTime = iso => {
   const d = new Date(iso);
   if (isNaN(d)) return '';
-  const REL2 = [[31536e6, 'y'], [2592e6, 'mo'], [864e5, 'd'], [36e5, 'h'], [6e4, 'm']];
   const diff = Date.now() - d;
-  for (const [ms, u] of REL2) if (diff >= ms) return Math.floor(diff / ms) + u + ' ago';
-  return 'just now';
+  for (const [ms, u] of REL) if (diff >= ms) return t('ago', Math.floor(diff / ms) + t(u));
+  return t('justNow');
 };
 
 function showPicker() {
@@ -734,8 +1100,8 @@ function showPicker() {
     const m = s.model;
     const when = (m.items.find(x => x.ts) || {}).ts || '';
     const bits = [m.branch && '⑂ ' + m.branch,
-                  m.items.filter(x => x.kind === 'user').length + ' prompts',
-                  m.items.filter(x => x.kind === 'tool').length + ' tools',
+                  t('pPrompts', m.items.filter(x => x.kind === 'user').length),
+                  t('pTools', m.items.filter(x => x.kind === 'tool').length),
                   relTime(when)].filter(Boolean).join(' · ');
     return `<button class="srow" data-i="${i}">
       <span class="t">${esc(m.title)}</span>
@@ -743,7 +1109,7 @@ function showPicker() {
       <span class="f">${esc(s.name)}</span></button>`;
   }).join('');
   $('#picker').innerHTML =
-    `<h2>${SESSIONS.length} transcripts loaded</h2><div class="rows">${rows}</div>`;
+    `<h2>${esc(t('pickerHead', SESSIONS.length))}</h2><div class="rows">${rows}</div>`;
   $$('#picker .srow').forEach(b => b.onclick = () => {
     const s = SESSIONS[+b.dataset.i];
     document.body.classList.remove('picking');
@@ -758,9 +1124,9 @@ function showPicker() {
   $('#stats').innerHTML = '';
   $('#statsmore').innerHTML = '';
   $('#statsmore').classList.remove('open');
-  document.title = `${SESSIONS.length} transcripts`;
-  $('#homebtn').innerHTML = '⌂<span class="lbl"> Home</span>';
-  $('#homebtn').title = 'Back to the start, to open different files';
+  document.title = t('pickerTitle', SESSIONS.length);
+  $('#homebtn').innerHTML = `⌂<span class="lbl">${esc(t('home'))}</span>`;
+  $('#homebtn').title = t('hBackStartFiles');
   document.body.classList.add('picking');
   document.body.classList.remove('loaded');
 }
@@ -808,13 +1174,16 @@ function bootStatic() {
     err.textContent = '';
     const files = [...list].filter(f =>
       /\.(jsonl?|md|markdown|txt)$/i.test(f.name) || f.type === '');
-    if (!files.length) { err.textContent = 'Drop a .jsonl transcript, or a .md file.'; return; }
-    if (files.length > 1) err.textContent = `Reading ${files.length} files…`;
+    if (!files.length) { err.textContent = t('errDrop'); return; }
+    if (files.length > 1) err.textContent = t('errReading', files.length);
     const read = await Promise.all(files.map(readOne));
     const docs = read.filter(x => x.doc && x.doc.trim());
     if (docs.length && !read.some(x => x.records && x.records.length)) {
       const d = docs[0];
       CURRENT = null;
+      // Remembered so a language switch can re-render it: a document has no records to
+      // re-parse, and CURRENT is deliberately null here.
+      LAST_DOC = { text: d.doc, name: d.name };
       render(markdownModel(d.doc, d.name), d.name);
       wire(); updatePill();
       if (docs.length > 1) err.textContent = '';
@@ -823,23 +1192,27 @@ function bootStatic() {
     const loaded = read.filter(x => x.records && x.records.length);
     err.textContent = '';
     if (!loaded.length) {
-      err.textContent = 'No readable JSON lines. Are these Claude Code .jsonl transcripts?';
+      err.textContent = t('errNoJson');
       return;
     }
+    LAST_DOC = null;
     if (loaded.length === 1) { load(loaded[0].records, loaded[0].name); return; }
     SESSIONS = loaded.map(x => ({ ...x, model: parseRecords(x.records) }));
     showPicker();
   };
   const readFile = f => readFiles([f]);
 
-  const cp = $('#copypath');
-  if (cp) cp.onclick = () => {
+  // Delegated rather than bound: applyStatic() rewrites the paragraph this button sits in
+  // every time the language changes, and a handler bound to the old node would go with it.
+  document.addEventListener('click', e => {
+    const cp = e.target.closest('#copypath');
+    if (!cp) return;
     navigator.clipboard.writeText('~/.claude/projects').then(() => {
       const was = cp.textContent;
-      cp.textContent = 'copied — now press ⌘⇧G and paste';
+      cp.textContent = t('copiedPath');
       setTimeout(() => cp.textContent = was, 2400);
     });
-  };
+  });
   zone.onclick = () => file.click();
   file.onchange = () => file.files.length && readFiles(file.files);
   ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => {
@@ -918,10 +1291,10 @@ function bootStatic() {
   $('#lbimg').onclick = e => e.stopPropagation();
   $('#lbgoto').onclick = e => {
     e.stopPropagation();
-    const t = $('#lbgoto').dataset.target;
+    const target = $('#lbgoto').dataset.target;
     lb().classList.remove('open'); $('#lbimg').removeAttribute('src');
     closeMedia();
-    const el = t && document.getElementById(t);
+    const el = target && document.getElementById(target);
     if (el) {
       el.scrollIntoView({ block: 'center', behavior: 'smooth' });
       el.classList.add('flash');
@@ -935,9 +1308,9 @@ function bootStatic() {
     try {
       const png = await toPng(dataToBlob($('#lbimg').src));
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
-      copyBtn.textContent = '✓ Copied — paste into images.google.com';
+      copyBtn.textContent = t('lbCopied');
     } catch {
-      copyBtn.textContent = '✕ Blocked — right-click the image instead';
+      copyBtn.textContent = t('lbBlocked');
     }
     setTimeout(() => copyBtn.textContent = label, 2600);
   };
@@ -992,7 +1365,7 @@ function bootStatic() {
       scrollTo({ top: 0 });
       return;
     }
-    CURRENT = null; SESSIONS = []; shots = []; idx = -1;
+    CURRENT = null; SESSIONS = []; LAST_DOC = null; shots = []; idx = -1;
     clearHits();
     $('#q').value = ''; $('#cnt').textContent = '';
     $('.chat').innerHTML = ''; $('#toc').innerHTML = '';
@@ -1002,11 +1375,11 @@ function bootStatic() {
     document.body.className = '';
     document.title = 'Claude Transcript Viewer';
     $('h1').textContent = 'Claude Transcript Viewer';
-    $('#homebtn').innerHTML = '⌂<span class="lbl"> Home</span>';
+    $('#homebtn').innerHTML = `⌂<span class="lbl">${esc(t('home'))}</span>`;
     // render() is what disables this, and nothing here would re-enable it. Landing on the
     // drop zone with a dead Home button is a state the user cannot leave.
     $('#homebtn').disabled = false;
-    $('#homebtn').title = 'Back to the start, to open another transcript';
+    $('#homebtn').title = t('hBackStart');
     $('#droperr').textContent = '';
     scrollTo({ top: 0 });
   };
@@ -1018,7 +1391,22 @@ function bootStatic() {
   $('#morebtn').onclick = e => { e.stopPropagation(); document.body.classList.toggle('menu-open'); };
   $('#actionmenu').addEventListener('click', () => setTimeout(closeMenu, 0));
   document.addEventListener('click', e => {
-    if (!e.target.closest('.actions')) { closeMenu(); closeExport(); }
+    if (!e.target.closest('.actions')) { closeMenu(); closeExport(); closeLangMenu(); }
+  });
+
+  // ── language ──
+  const closeLangMenu = () => document.body.classList.remove('lang-open');
+  $('#langbtn').onclick = e => {
+    e.stopPropagation();
+    closeExport();
+    document.body.classList.toggle('lang-open');
+  };
+  $('#langmenu').addEventListener('click', e => {
+    const b = e.target.closest('[data-l]');
+    if (!b) return;
+    closeLangMenu();
+    closeMenu();
+    setLang(b.dataset.l);
   });
 
   $('#tocbtn').onclick = () => document.body.classList.toggle('toc-open');
@@ -1060,11 +1448,14 @@ function bootStatic() {
     if (e.key === '/' && document.activeElement !== box) { e.preventDefault(); box.focus(); }
     if (e.key === 'Escape') {
       box.blur();
-      document.body.classList.remove('toc-open', 'menu-open', 'export-open');
+      document.body.classList.remove('toc-open', 'menu-open', 'export-open', 'lang-open');
     }
   };
 }
 
+// Runs after SHELL is captured, so an exported page carries the untranslated template and
+// re-detects the reader's own language when it opens rather than freezing in this one.
+applyStatic();
 bootStatic();
 // The transcript is injected as an inert <script type="application/json">, never as code.
 // A JSON block is not executed by the browser, so a hostile file cannot break out of it,
@@ -1078,7 +1469,7 @@ if (DATA && DATA.textContent.trim()) {
     EMBEDDED = { records: payload.records, srcName: payload.src || 'transcript' };
     load(EMBEDDED.records, EMBEDDED.srcName);
   } catch (e) {
-    document.getElementById('droperr').textContent = 'Embedded transcript is unreadable.';
+    document.getElementById('droperr').textContent = t('errEmbedded');
   }
 }
 })();

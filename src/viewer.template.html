@@ -12,23 +12,31 @@
   <div class="row1">
     <h1>Claude Transcript Viewer</h1>
     <div class="search">
-      <input id="q" type="search" placeholder="Search…  ( / )">
+      <input id="q" type="search" placeholder="Search…  ( / )" data-i18n-ph="searchPh">
       <button class="btn" id="prev">↑</button><button class="btn" id="next">↓</button>
       <span class="count" id="cnt"></span>
     </div>
     <div class="actions">
-      <button class="btn" id="morebtn" title="More">⋯</button>
+      <button class="btn" id="morebtn" title="More" data-i18n-title="more">⋯</button>
       <div class="actionmenu" id="actionmenu">
         <button class="btn" id="mediabtn" hidden>🖼</button>
         <button class="btn" id="linkbtn" hidden>🔗</button>
-        <button class="btn" id="exportbtn" title="Save this transcript">⤓<span class="lbl"> Export</span></button>
-        <button class="btn" id="homebtn" title="Back to the start">⌂<span class="lbl"> Home</span></button>
-        <button class="btn" id="tocbtn" title="Table of contents">☰</button>
+        <button class="btn" id="exportbtn" title="Save this transcript" data-i18n-title="exportT">⤓<span class="lbl" data-i18n="export"> Export</span></button>
+        <button class="btn" id="homebtn" title="Back to the start" data-i18n-title="homeT">⌂<span class="lbl" data-i18n="home"> Home</span></button>
+        <button class="btn" id="tocbtn" title="Table of contents" data-i18n-title="tocT">☰</button>
+        <button class="btn" id="langbtn" title="Language">文<span class="lbl" data-i18n="langShort"> EN</span></button>
       </div>
       <div class="actionmenu" id="exportmenu">
-        <button class="btn" id="exp-html">HTML<small>one self-contained file</small></button>
-        <button class="btn" id="exp-md">Markdown<small>for a notes vault or an issue</small></button>
-        <button class="btn" id="exp-pdf">PDF<small>via your browser's print dialog</small></button>
+        <button class="btn" id="exp-html">HTML<small data-i18n="expHtml">one self-contained file</small></button>
+        <button class="btn" id="exp-md">Markdown<small data-i18n="expMd">for a notes vault or an issue</small></button>
+        <button class="btn" id="exp-pdf">PDF<small data-i18n="expPdf">via your browser's print dialog</small></button>
+      </div>
+      <!-- Language is a choice about the whole page, so it sits with the other page-level
+           actions rather than in a corner of its own. Values match the STR table keys. -->
+      <div class="actionmenu" id="langmenu">
+        <button class="btn" data-l="en">English</button>
+        <button class="btn" data-l="hant">繁體中文</button>
+        <button class="btn" data-l="hans">简体中文</button>
       </div>
     </div>
   </div>
@@ -41,25 +49,27 @@
 
 <div id="drop">
   <div class="zone">
-    <h2>Drop a Claude Code transcript here</h2>
-    <p>A <code>.jsonl</code> file from <code>~/.claude/projects/</code>. You can also click to browse.</p>
-    <p>Everything is parsed in this page. Nothing is uploaded, and no network request is made.</p>
-    <p class="fine">Reloading starts over: a browser cannot re-read a dropped file on its own.
+    <h2 data-i18n="dropTitle">Drop a Claude Code transcript here</h2>
+    <p data-i18n-html="dropSub">A <code>.jsonl</code> file from <code>~/.claude/projects/</code>. You can also click to browse.</p>
+    <p data-i18n="dropPrivacy">Everything is parsed in this page. Nothing is uploaded, and no network request is made.</p>
+    <p class="fine" data-i18n-html="dropReload">Reloading starts over: a browser cannot re-read a dropped file on its own.
     Use <b>Export</b> to keep one.</p>
     <input id="fileinput" type="file" multiple
            accept=".jsonl,.md,.markdown,.txt,application/json,text/plain,text/markdown">
   </div>
   <div class="err" id="droperr"></div>
   <div class="hint">
-    <p><b>That folder is hidden, and this page cannot open the picker inside it.</b> The API
+    <p data-i18n-html="hintWhy"><b>That folder is hidden, and this page cannot open the picker inside it.</b> The API
       that could (<code>showDirectoryPicker</code>) rejects on a local file, by spec: a
       <code>file://</code> page is an opaque origin. Keeping this page openable offline and
       serverless is worth more than a nicer picker. Two ways around it:</p>
-    <p>In the picker, press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>G</kbd> and paste
-      <button id="copypath" class="pathbtn" title="Click to copy">~/.claude/projects</button></p>
-    <p>Or open a Finder window there once, and drag a file straight onto this page:<br>
+    <!-- The translated run is a span beside the button, not the paragraph around it:
+         swapping innerHTML on the parent would delete #copypath and its handler. -->
+    <p><span data-i18n-html="hintPaste">In the picker, press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>G</kbd> and paste
+      </span><button id="copypath" class="pathbtn" title="Click to copy" data-i18n-title="copyT">~/.claude/projects</button></p>
+    <p data-i18n-html="hintFinder">Or open a Finder window there once, and drag a file straight onto this page:<br>
       <code>open ~/.claude/projects</code></p>
-    <p class="fine">Transcripts are deleted after 30 days unless you raise
+    <p class="fine" data-i18n-html="hintCleanup">Transcripts are deleted after 30 days unless you raise
       <code>cleanupPeriodDays</code> in <code>~/.claude/settings.json</code>.</p>
   </div>
 </div>
@@ -69,8 +79,8 @@
 <div class="layout">
   <nav>
     <div class="navbar">
-      <h2 id="navtitle">Your prompts</h2>
-      <button id="tocclose" title="Close (Esc)">✕</button>
+      <h2 id="navtitle" data-i18n="navPrompts">Your prompts</h2>
+      <button id="tocclose" title="Close (Esc)" data-i18n-title="closeEsc">✕</button>
     </div>
     <div id="toc"></div>
   </nav>
@@ -78,17 +88,17 @@
 </div>
 
 <div id="lb">
-  <button class="nav" id="lbprev" title="Previous (←)">‹</button>
+  <button class="nav" id="lbprev" title="Previous (←)" data-i18n-title="prevT">‹</button>
   <img id="lbimg" alt="">
-  <button class="nav" id="lbnext" title="Next (→)">›</button>
-  <button class="x" id="lbclose" title="Close (Esc)">✕</button>
+  <button class="nav" id="lbnext" title="Next (→)" data-i18n-title="nextT">›</button>
+  <button class="x" id="lbclose" title="Close (Esc)" data-i18n-title="closeEsc">✕</button>
   <span id="lbcount"></span>
   <div id="lbbottom">
     <div id="lbactions">
-      <button id="lbgoto">↩ Jump to message</button>
-      <button id="lbcopy" title="Copy the image, then paste it into images.google.com">⧉ Copy image</button>
+      <button id="lbgoto" data-i18n="lbGoto">↩ Jump to message</button>
+      <button id="lbcopy" title="Copy the image, then paste it into images.google.com" data-i18n-title="lbCopyT" data-i18n="lbCopy">⧉ Copy image</button>
     </div>
-    <span id="lbhint">← → or swipe to navigate · Esc to close ·
+    <span id="lbhint" data-i18n="lbHint">← → or swipe to navigate · Esc to close ·
       right-click an image for your browser's reverse-image search</span>
   </div>
 </div>
@@ -97,8 +107,8 @@
   <div id="mediabar">
     <span id="mediahead"></span>
     <div class="tools">
-      <button id="dlall" title="Download every image">⤓ Download all</button>
-      <button id="mediaclose" title="Close (Esc)">✕ Close</button>
+      <button id="dlall" title="Download every image" data-i18n-title="dlAllT" data-i18n="dlAll">⤓ Download all</button>
+      <button id="mediaclose" title="Close (Esc)" data-i18n-title="closeEsc" data-i18n="closeBtn">✕ Close</button>
     </div>
   </div>
   <div id="mediascroll"><div id="mediagrid"></div></div>
@@ -107,12 +117,12 @@
 <div id="links">
   <div id="mediabar">
     <span id="linkhead"></span>
-    <div class="tools"><button id="linkclose" title="Close (Esc)">✕ Close</button></div>
+    <div class="tools"><button id="linkclose" title="Close (Esc)" data-i18n-title="closeEsc" data-i18n="closeBtn">✕ Close</button></div>
   </div>
   <div id="mediascroll"><div id="linklist"></div></div>
 </div>
 
-<div id="pill" title="Back to top">1 / 1</div>
+<div id="pill" title="Back to top" data-i18n-title="topT">1 / 1</div>
 <script>/*{{JS}}*/</script>
 </body>
 </html>

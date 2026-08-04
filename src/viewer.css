@@ -9,8 +9,14 @@
  --think-bg:#221f1a;--think-bar:#8a7444;--tool-bg:#1f2126;
  --code-bg:#16181d;--code-text:#dfe3ea;--mark:#a8801a}}
 *{box-sizing:border-box}
+/* Latin faces come first so English is unaffected, then one CJK family per platform. Both
+   PingFang cuts are listed because macOS ships TC and SC as separate faces and picking the
+   wrong one gives a reader the other script's glyph shapes for the codepoints they share.
+   Which of the two wins is decided by the lang attribute, not by this order. */
 body{margin:0;background:var(--bg);color:var(--text);
- font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC",Helvetica,sans-serif}
+ font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","PingFang SC",
+ "Hiragino Sans CNS","Microsoft JhengHei","Microsoft YaHei","Noto Sans CJK TC",
+ "Noto Sans CJK SC",Helvetica,sans-serif}
 a{color:var(--accent)}
 /* Only the hosted demo page carries this bar; --demo-page injects the markup. It sits above
    the sticky header on purpose, so it scrolls away once you are reading. */
@@ -397,6 +403,12 @@ pre code{overflow-wrap:normal}
  .actionmenu .lbl{display:inline}
  .actionmenu #mediabtn:after{content:" Media"}
  .actionmenu #tocbtn:after{content:" Contents"}
+ /* These two labels exist only as generated content, so the JS string table cannot reach
+    them. They key off the lang attribute setLang() writes instead. */
+ html[lang="zh-Hant"] .actionmenu #mediabtn:after{content:" 媒體"}
+ html[lang="zh-Hant"] .actionmenu #tocbtn:after{content:" 目錄"}
+ html[lang="zh-Hans"] .actionmenu #mediabtn:after{content:" 媒体"}
+ html[lang="zh-Hans"] .actionmenu #tocbtn:after{content:" 目录"}
 }
 
 /* ── Print, which is also how you get a PDF ───────────────────────────────────
@@ -459,6 +471,19 @@ body.export-open #exportmenu{display:flex}
 #exportmenu .btn:hover{background:color-mix(in srgb,var(--accent) 14%,transparent)}
 #exportmenu small{font-size:11.5px;color:var(--muted);font-weight:400}
 body.picking #exportmenu,body:not(.loaded) #exportmenu{display:none}
+
+/* The language popover anchors like the export one. The ID beats .actionmenu's display,
+   which is what keeps it closed both inline and inside the ⋯ overflow menu. Unlike export
+   it stays available at the drop zone: that is the screen a reader who needs it sees first. */
+#langmenu{display:none;position:absolute;right:0;top:calc(100% + 7px);z-index:51;
+ flex-direction:column;align-items:stretch;gap:2px;padding:6px;min-width:150px;
+ background:var(--surface);border:1px solid var(--border);border-radius:11px;
+ box-shadow:0 10px 30px rgba(0,0,0,.28)}
+body.lang-open #langmenu{display:flex}
+#langmenu .btn{border:none;background:none;text-align:left;padding:8px 10px;font-size:13.5px}
+#langmenu .btn:hover{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+#langmenu .btn.on{color:var(--accent);font-weight:600}
+#langbtn{font-size:13px}
 
 /* A document's contents list indents by heading level, which is the only cue that says
    where you are in a structure rather than just what is in it. */

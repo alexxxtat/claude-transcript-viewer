@@ -84,6 +84,10 @@ Python 3.8+, standard library only.
 - A copy button on every message, which copies the markdown the record held rather than the
   rendered text, so tables and code fences survive being pasted somewhere else
 - Light and dark, following the system setting
+- English, 繁體中文 and 简体中文. The language is read from your browser on first open and
+  changed from `文` in the header, and the choice is remembered. Traditional and Simplified
+  are written out separately rather than converted from one another, because the pairs that
+  differ are vocabulary and not characters: 檔案/文件, 搜尋/搜索, 網路/网络
 
 **Search**
 - In-page search with live highlight, hit count, and next/previous

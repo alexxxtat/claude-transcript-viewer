@@ -99,6 +99,44 @@ if tpl_path.exists() and js_path.exists():
             continue          # reached through a delegated handler
         fail("wiring", f"<{tag} id=\"{eid}\"> has no handler in src/viewer.js")
 
+# ── 1c. the three language tables must agree ────────────────────────────────
+# A key present in `en` and missing elsewhere does not throw: t() falls back to English, so
+# the page keeps working and a Chinese reader silently gets one English sentence in the middle
+# of a translated screen. Nothing in review catches one line out of ninety.
+if js_path.exists():
+    js = js_path.read_text()
+    tables = {}
+    for name in ("en", "hant", "hans"):
+        m = re.search(rf"^  {name}: {{$", js, re.M)
+        if not m:
+            fail("i18n", f"src/viewer.js has no `{name}` block in STR")
+            continue
+        # Read to the matching dedent: the closing "  }," at the same indent as the opener.
+        end = re.search(r"^  \},$", js[m.end():], re.M)
+        body = js[m.end(): m.end() + (end.start() if end else 0)]
+        # Keys are `word:` at the start of a line or after a comma, never inside a string.
+        tables[name] = set(re.findall(r"(?:^|[{,])\s*([A-Za-z][\w]*)\s*:", body, re.M))
+
+    if len(tables) == 3:
+        base = tables["en"]
+        if not base:
+            fail("i18n", "parsed zero keys from the `en` table; the check is not working")
+        for name in ("hant", "hans"):
+            missing = sorted(base - tables[name])
+            extra = sorted(tables[name] - base)
+            if missing:
+                fail("i18n", f"STR.{name} is missing {len(missing)} key(s): "
+                             f"{', '.join(missing[:6])}"
+                             f"{' …' if len(missing) > 6 else ''}")
+            if extra:
+                fail("i18n", f"STR.{name} has {len(extra)} key(s) not in en: "
+                             f"{', '.join(extra[:6])}")
+        # Every key the code asks for must exist, or t() returns the key name as text.
+        used = set(re.findall(r"\bt\('([A-Za-z]\w*)'", js))
+        for k in sorted(used - base):
+            fail("i18n", f"src/viewer.js calls t('{k}') but no such key is in STR.en")
+
+
 # ── 2. nothing personal, and no real transcripts ─────────────────────────────
 HOME_RE = re.compile(r"/Users/(?!dev/)[a-z0-9._-]+", re.I)
 for p in tracked("*.md", "*.py", "*.html", "*.css", "*.js", "**/*.md", "**/*.py",

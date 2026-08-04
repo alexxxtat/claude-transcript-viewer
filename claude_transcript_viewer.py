@@ -311,14 +311,19 @@ def convert(path, out_dir):
 
 
 REPO_URL = "https://github.com/alexxxtat/claude-transcript-viewer"
+# The data-i18n keys are carried by src/viewer.js like every other label, so this banner
+# switches with the rest of the page. The English here is what a reader sees before the
+# script runs and if it never does, which is why it is written out rather than left empty.
 DEMO_BAR = (
     '<div class="demobar">'
-    '<b>Live demo</b>'
-    '<span>A fictional session, safe to click around. Drop a <code>.jsonl</code> of your own and '
-    'it is parsed here in the page, never uploaded &mdash; but for real transcripts prefer the '
-    'downloaded file, which you can verify by reading it and running it with Wi-Fi off.</span>'
-    f'<a href="{REPO_URL}/raw/main/viewer.html" download>&#8595; Download viewer.html</a>'
-    f'<a href="{REPO_URL}">Source</a>'
+    '<b data-i18n="demoLive">Live demo</b>'
+    '<span data-i18n-html="demoWhat">A fictional session, safe to click around. Drop a '
+    '<code>.jsonl</code> of your own and it is parsed here in the page, never uploaded '
+    '&mdash; but for real transcripts prefer the downloaded file, which you can verify by '
+    'reading it and running it with Wi-Fi off.</span>'
+    f'<a href="{REPO_URL}/raw/main/viewer.html" download data-i18n="demoDownload">'
+    '&#8595; Download viewer.html</a>'
+    f'<a href="{REPO_URL}" data-i18n="demoSource">Source</a>'
     '</div>\n'
 )
 
